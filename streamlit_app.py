@@ -16,7 +16,7 @@ def get_snowflake_session():
         "schema": st.secrets["snowflake"]["schema"]
     }
     return Session.builder.configs(connection_parameters).create()
-    
+ 
 # Fonctions pour récupérer les données
 def get_region():
     query = "SELECT DISTINCT REGION FROM geo_com.public.test ORDER BY REGION ASC"
@@ -73,7 +73,7 @@ def to_csv(df):
     
 # Interface utilisateur
 st.title("Application commerciale")
-
+session = get_snowflake_session()
 # Sélection de la région
 existing_regions = get_region()
 region_choisie = st.selectbox("Sélectionner une région", existing_regions)
