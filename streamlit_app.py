@@ -1,11 +1,22 @@
 import streamlit as st
 import pydeck as pdk
 import io
+import snowflake.connector
+from snowflake.snowpark.session import Session
 from snowflake.snowpark.context import get_active_session
 
 # Connexion à Snowflake
-session = get_active_session()
-
+def get_snowflake_session():
+    connection_parameters = {
+        "user": st.secrets["snowflake"]["user"],
+        "password": st.secrets["snowflake"]["password"],
+        "account": st.secrets["snowflake"]["account"],
+        "warehouse": st.secrets["snowflake"]["warehouse"],
+        "database": st.secrets["snowflake"]["database"],
+        "schema": st.secrets["snowflake"]["schema"]
+    }
+    return Session.builder.configs(connection_parameters).create()
+    
 # Fonctions pour récupérer les données
 def get_region():
     query = "SELECT DISTINCT REGION FROM geo_com.public.test ORDER BY REGION ASC"
