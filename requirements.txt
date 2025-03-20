@@ -1,2 +1,4 @@
 snowflake-connector-python
 pandas
+snowflake-connector-python
+snowflake-snowpark-python
