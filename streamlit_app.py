@@ -4,6 +4,7 @@ import io
 import snowflake.connector
 from snowflake.snowpark.session import Session
 from snowflake.snowpark.context import get_active_session
+import pandas as pd
 
 # Connexion à Snowflake
 def get_snowflake_session():
@@ -16,7 +17,13 @@ def get_snowflake_session():
         "schema": st.secrets["snowflake"]["schema"]
     }
     return Session.builder.configs(connection_parameters).create()
- 
+
+# Fonction pour rajouter des commentaires
+def save_commentaire(nom, commentaire):
+    """Met à jour le commentaire dans la base de données Snowflake."""
+    query = "UPDATE geo_com.public.test SET COMMENTAIRES = ? WHERE NOM = ?"
+    session.sql(query, [commentaire, nom]).collect()
+
 # Fonctions pour récupérer les données
 def get_region():
     query = "SELECT DISTINCT REGION FROM geo_com.public.test ORDER BY REGION ASC"
@@ -45,21 +52,22 @@ def get_industrie(region_choisie, size_choisies, departement_choisie):
 
 def get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie):
     query = f"""
-    SELECT NOM, CREATION, VILLE, SITE_INTERNET, LINKEDIN_URL, SIZE, INDUSTRIE, LON, LAT
+    SELECT NOM, CREATION, VILLE, SITE_INTERNET, LINKEDIN_URL, SIZE, INDUSTRIE, COMMENTAIRES, LON, LAT
     FROM geo_com.public.test
     WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND SECTEUR_D_ACTIVITE = ?
     """
     result = session.sql(query, [region_choisie, departement_choisie] + size_choisies + [industrie_choisie]).to_pandas()
-    
+
     # Supprime les entreprises sans coordonnées
     result = result.dropna(subset=["LAT", "LON"])
 
-    # Concaténer les noms des entreprises par ville avec le nombre de salariés
+    # Concaténer les noms des entreprises par ville
     grouped_data = result.groupby(["VILLE", "LAT", "LON"]).apply(
         lambda x: ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
     ).reset_index(name="ENTREPRISES")
 
     return result.drop(columns=["LON", "LAT"]), grouped_data
+
 # Fonction pour récupérer les années disponibles
 def get_years():
     query = "SELECT DISTINCT CREATION FROM geo_com.public.test ORDER BY CREATION ASC"
@@ -70,10 +78,32 @@ def get_years():
 def to_csv(df):
     csv = df.to_csv(index=False)  # Convertir le DataFrame en CSV sans index
     return csv
-    
+
+# Fonction pour afficher et sauvegarder les commentaires
+def afficher_et_sauvegarder_commentaires(entreprises):
+    for index, row in entreprises.iterrows():
+        key = row["NOM"]
+        
+        # Récupération du commentaire existant, s'il y en a
+        commentaire_actuel = row["COMMENTAIRES"] if pd.notna(row["COMMENTAIRES"]) else ""
+        
+        # Champ pour entrer un commentaire (texte multi-ligne)
+        new_comment = st.text_area(f"Commentaire pour {key}:",
+                                   value=commentaire_actuel, 
+                                   key=f"comment_{index}")
+        
+        # Bouton pour enregistrer le commentaire
+        if st.button(f"Enregistrer pour {key}", key=f"save_{index}"):
+            if new_comment != commentaire_actuel:  # Vérifie si le commentaire a changé
+                save_commentaire(key, new_comment)
+                st.success(f"Commentaire mis à jour pour {key}!")
+            else:
+                st.info(f"Aucun changement pour {key}.")
+
 # Interface utilisateur
 st.title("Application commerciale")
 session = get_snowflake_session()
+
 # Sélection de la région
 existing_regions = get_region()
 region_choisie = st.selectbox("Sélectionner une région", existing_regions)
@@ -104,7 +134,7 @@ if industrie_choisie:
         st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, SECTEUR_D_ACTIVITE '{industrie_choisie}' :")
         
         # Afficher le tableau avec les nouvelles colonnes
-        st.table(entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE"]])
+        st.table(entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE", "COMMENTAIRES"]])
     
         # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
         csv_data = to_csv(entreprises)
@@ -114,6 +144,10 @@ if industrie_choisie:
             file_name="entreprises.csv",
             mime="text/csv"
         )
+
+        # Afficher les champs de commentaire et les enregistrer
+        afficher_et_sauvegarder_commentaires(entreprises)
+
         # Vérifier si la carte peut être affichée
         if not map_data.empty:
             layer = pdk.Layer(
