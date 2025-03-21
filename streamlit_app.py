@@ -41,13 +41,13 @@ def get_industrie(region_choisie, size_choisies, departement_choisie):
     ORDER BY Secteur_d_activite ASC
     """
     result = session.sql(query, [region_choisie, departement_choisie] + size_choisies).collect()
-    return [row["INDUSTRIE"] for row in result]
+    return [row["Secteur_d_activite"] for row in result]
 
 def get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie):
     query = f"""
     SELECT NOM, CREATION, VILLE, SITE_INTERNET, LINKEDIN_URL, LON, LAT
     FROM geo_com.public.test
-    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND INDUSTRIE = ?
+    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND Secteur_d_activite  = ?
     """
     result = session.sql(query, [region_choisie, departement_choisie] + size_choisies + [industrie_choisie]).to_pandas()
     
