@@ -101,19 +101,19 @@ if industrie_choisie:
     entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie)
 
     if not entreprises.empty:
-    st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, SECTEUR_D_ACTIVITE '{industrie_choisie}' :")
+        st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, SECTEUR_D_ACTIVITE '{industrie_choisie}' :")
+        
+        # Afficher le tableau avec les nouvelles colonnes
+        st.table(entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE"]])
     
-    # Afficher le tableau avec les nouvelles colonnes
-    st.table(entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE"]])
-
-    # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
-    csv_data = to_csv(entreprises)
-    st.download_button(
-        label="Télécharger en CSV",
-        data=csv_data,
-        file_name="entreprises.csv",
-        mime="text/csv"
-    )
+        # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
+        csv_data = to_csv(entreprises)
+        st.download_button(
+            label="Télécharger en CSV",
+            data=csv_data,
+            file_name="entreprises.csv",
+            mime="text/csv"
+        )
         # Vérifier si la carte peut être affichée
         if not map_data.empty:
             layer = pdk.Layer(
