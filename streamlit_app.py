@@ -79,27 +79,6 @@ def to_csv(df):
     csv = df.to_csv(index=False)  # Convertir le DataFrame en CSV sans index
     return csv
 
-# Fonction pour afficher et sauvegarder les commentaires
-def afficher_et_sauvegarder_commentaires(entreprises):
-    for index, row in entreprises.iterrows():
-        key = row["NOM"]
-        
-        # Récupération du commentaire existant, s'il y en a
-        commentaire_actuel = row["COMMENTAIRES"] if pd.notna(row["COMMENTAIRES"]) else ""
-        
-        # Champ pour entrer un commentaire (texte multi-ligne)
-        new_comment = st.text_area(f"Commentaire pour {key}:",
-                                   value=commentaire_actuel, 
-                                   key=f"comment_{index}")
-        
-        # Bouton pour enregistrer le commentaire
-        if st.button(f"Enregistrer pour {key}", key=f"save_{index}"):
-            if new_comment != commentaire_actuel:  # Vérifie si le commentaire a changé
-                save_commentaire(key, new_comment)
-                st.success(f"Commentaire mis à jour pour {key}!")
-            else:
-                st.info(f"Aucun changement pour {key}.")
-
 # Interface utilisateur
 st.title("Application commerciale")
 session = get_snowflake_session()
@@ -145,8 +124,25 @@ if industrie_choisie:
             mime="text/csv"
         )
 
-        # Afficher les champs de commentaire et les enregistrer
-        afficher_et_sauvegarder_commentaires(entreprises)
+        # Sélectionner une entreprise à partir du tableau pour ajouter un commentaire
+        entreprise_choisie = st.selectbox("Sélectionner une entreprise pour ajouter un commentaire", entreprises["NOM"].tolist())
+
+        # Récupération du commentaire existant, s'il y en a
+        entreprise_selected = entreprises[entreprises["NOM"] == entreprise_choisie].iloc[0]
+        commentaire_actuel = entreprise_selected["COMMENTAIRES"] if pd.notna(entreprise_selected["COMMENTAIRES"]) else ""
+        
+        # Affichage de la zone de texte pour ajouter/modifier un commentaire
+        new_comment = st.text_area(f"Commentaire pour {entreprise_choisie}:",
+                                   value=commentaire_actuel, 
+                                   key=f"comment_{entreprise_choisie}")
+        
+        # Bouton pour enregistrer le commentaire
+        if st.button(f"Enregistrer pour {entreprise_choisie}"):
+            if new_comment != commentaire_actuel:  # Vérifie si le commentaire a changé
+                save_commentaire(entreprise_choisie, new_comment)
+                st.success(f"Commentaire mis à jour pour {entreprise_choisie}!")
+            else:
+                st.info(f"Aucun changement pour {entreprise_choisie}.")
 
         # Vérifier si la carte peut être affichée
         if not map_data.empty:
