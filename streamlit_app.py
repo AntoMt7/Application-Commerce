@@ -187,4 +187,19 @@ if secteur_choisi:
 
             view_state = pdk.ViewState(
                 latitude=map_data["LAT"].mean(),
-                longitude
+                longitude=map_data["LON"].mean(),
+                zoom=10
+            )
+
+            deck = pdk.Deck(
+                layers=[layer],
+                initial_view_state=view_state,
+                map_style="mapbox://styles/mapbox/light-v9",  # Fond de carte clair
+                tooltip={"html": "<b>Ville:</b> {VILLE}<br><b>Entreprises:</b> {ENTREPRISES}"}
+            )
+
+            st.pydeck_chart(deck)
+        else:
+            st.write("Aucune donnée de localisation disponible pour affichage sur la carte.")
+    else:
+        st.write("Aucune entreprise ne correspond aux critères sélectionnés.")
