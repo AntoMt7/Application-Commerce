@@ -35,19 +35,19 @@ def get_departement(region_choisie):
 
 def get_industrie(region_choisie, size_choisies, departement_choisie):
     query = f"""
-    SELECT DISTINCT Secteur_d_activite 
+    SELECT DISTINCT SECTEUR_D_ACTIVITE 
     FROM geo_com.public.test 
     WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))})
-    ORDER BY Secteur_d_activite ASC
+    ORDER BY SECTEUR_D_ACTIVITE ASC
     """
     result = session.sql(query, [region_choisie, departement_choisie] + size_choisies).collect()
-    return [row["Secteur_d_activite"] for row in result]
+    return [row["SECTEUR_D_ACTIVITE"] for row in result]
 
 def get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie):
     query = f"""
     SELECT NOM, CREATION, VILLE, SITE_INTERNET, LINKEDIN_URL, LON, LAT
     FROM geo_com.public.test
-    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND Secteur_d_activite  = ?
+    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND SECTEUR_D_ACTIVITE  = ?
     """
     result = session.sql(query, [region_choisie, departement_choisie] + size_choisies + [industrie_choisie]).to_pandas()
     
@@ -94,14 +94,14 @@ if departement_choisie:
 industrie_choisie = None
 if size_choisies:
     existing_industrie = get_industrie(region_choisie, size_choisies, departement_choisie)
-    industrie_choisie = st.selectbox("Sélectionner une industrie", existing_industrie)
+    industrie_choisie = st.selectbox("Sélectionner un secteur d'activité", existing_industrie)
 
 # Affichage des résultats si tous les critères sont remplis
 if industrie_choisie:
     entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie)
 
     if not entreprises.empty:
-        st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, industrie '{industrie_choisie}' :")
+        st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, SECTEUR_D_ACTIVITE '{industrie_choisie}' :")
         st.table(entreprises)  # On affiche les entreprises sans LON/LAT
         # Ajouter un bouton pour télécharger les données du tableau
         csv_data = to_csv(entreprises)  # Convertir les données du tableau en CSV
