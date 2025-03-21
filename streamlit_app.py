@@ -1,7 +1,9 @@
 import streamlit as st
 import pydeck as pdk
+import io
 import snowflake.connector
 from snowflake.snowpark.session import Session
+from snowflake.snowpark.context import get_active_session
 import pandas as pd
 
 # Connexion à Snowflake
@@ -110,12 +112,9 @@ if industrie_choisie:
     if not entreprises.empty:
         st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, SECTEUR_D_ACTIVITE '{industrie_choisie}' :")
         
-        # Créer une représentation sous forme de texte Markdown
-        for _, row in entreprises.iterrows():
-            site_internet = f"[Site Web]({row['SITE_INTERNET']})" if pd.notna(row["SITE_INTERNET"]) else "Pas de site"
-            linkedin_url = f"[LinkedIn]({row['LINKEDIN_URL']})" if pd.notna(row["LINKEDIN_URL"]) else "Pas de LinkedIn"
-            st.markdown(f"**{row['NOM']}** | {row['CREATION']} | {row['VILLE']} | {site_internet} | {linkedin_url} | {row['SIZE']} employés | {row['INDUSTRIE']}")
-
+        # Afficher le tableau avec les nouvelles colonnes
+        st.table(entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE", "COMMENTAIRES"]])
+    
         # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
         csv_data = to_csv(entreprises)
         st.download_button(
