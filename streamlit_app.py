@@ -3,7 +3,6 @@ import pydeck as pdk
 import io
 import snowflake.connector
 from snowflake.snowpark.session import Session
-from snowflake.snowpark.context import get_active_session
 import pandas as pd
 
 # Connexion à Snowflake
@@ -50,13 +49,36 @@ def get_industrie(region_choisie, size_choisies, departement_choisie):
     result = session.sql(query, [region_choisie, departement_choisie] + size_choisies).collect()
     return [row["SECTEUR_D_ACTIVITE"] for row in result]
 
-def get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie):
+def get_industries_for_secteur(region_choisie, size_choisies, departement_choisie, secteur_choisi):
+    query = f"""
+    SELECT DISTINCT INDUSTRIE 
+    FROM geo_com.public.test 
+    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND SECTEUR_D_ACTIVITE = ?
+    ORDER BY INDUSTRIE ASC
+    """
+    result = session.sql(query, [region_choisie, departement_choisie] + size_choisies + [secteur_choisi]).collect()
+    return [row["INDUSTRIE"] for row in result]
+
+def get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie=None, secteur_choisi=None):
     query = f"""
     SELECT NOM, CREATION, VILLE, SITE_INTERNET, LINKEDIN_URL, SIZE, INDUSTRIE, COMMENTAIRES, LON, LAT
     FROM geo_com.public.test
-    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND SECTEUR_D_ACTIVITE = ?
+    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))})
     """
-    result = session.sql(query, [region_choisie, departement_choisie] + size_choisies + [industrie_choisie]).to_pandas()
+    
+    params = [region_choisie, departement_choisie] + size_choisies
+    
+    # Ajouter le filtre sur le secteur d'activité si sélectionné
+    if secteur_choisi:
+        query += " AND SECTEUR_D_ACTIVITE = ?"
+        params.append(secteur_choisi)
+    
+    # Ajouter le filtre sur l'industrie si sélectionnée
+    if industrie_choisie:
+        query += " AND INDUSTRIE = ?"
+        params.append(industrie_choisie)
+    
+    result = session.sql(query, params).to_pandas()
 
     # Supprime les entreprises sans coordonnées
     result = result.dropna(subset=["LAT", "LON"])
@@ -99,18 +121,24 @@ if departement_choisie:
     sizes = get_size()
     size_choisies = st.multiselect("Sélectionner une ou plusieurs tailles d'entreprise", sizes)
 
-# Sélection de l'industrie avec filtrage dynamique
-industrie_choisie = None
+# Sélection du secteur d'activité avec filtrage dynamique
+secteur_choisi = None
 if size_choisies:
-    existing_industrie = get_industrie(region_choisie, size_choisies, departement_choisie)
-    industrie_choisie = st.selectbox("Sélectionner un secteur d'activité", existing_industrie)
+    existing_secteurs = get_industrie(region_choisie, size_choisies, departement_choisie)
+    secteur_choisi = st.selectbox("Sélectionner un secteur d'activité", existing_secteurs)
+
+# Sélection dynamique de l'industrie en fonction du secteur choisi
+industrie_choisie = None
+if secteur_choisi:
+    existing_industries = get_industries_for_secteur(region_choisie, size_choisies, departement_choisie, secteur_choisi)
+    industrie_choisie = st.selectbox("Sélectionner une industrie", existing_industries, index=0)
 
 # Affichage des résultats si tous les critères sont remplis
-if industrie_choisie:
-    entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie)
+if secteur_choisi:
+    entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie, secteur_choisi)
 
     if not entreprises.empty:
-        st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, SECTEUR_D_ACTIVITE '{industrie_choisie}' :")
+        st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, secteur d'activité '{secteur_choisi}' :")
         
         # Afficher le tableau avec les nouvelles colonnes
         st.table(entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE", "COMMENTAIRES"]])
@@ -137,7 +165,7 @@ if industrie_choisie:
                                    key=f"comment_{entreprise_choisie}")
         
         # Bouton pour enregistrer le commentaire
-        if st.button(f"Enregistrer pour {entreprise_choisie}"):
+        if st.button(f"Enregistrer pour {entreprise_choisie}") :
             if new_comment != commentaire_actuel:  # Vérifie si le commentaire a changé
                 save_commentaire(entreprise_choisie, new_comment)
                 st.success(f"Commentaire mis à jour pour {entreprise_choisie}!")
