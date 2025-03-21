@@ -45,21 +45,21 @@ def get_industrie(region_choisie, size_choisies, departement_choisie):
 
 def get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie):
     query = f"""
-    SELECT NOM, CREATION, VILLE, SITE_INTERNET, LINKEDIN_URL, LON, LAT
+    SELECT NOM, CREATION, VILLE, SITE_INTERNET, LINKEDIN_URL, SIZE, INDUSTRIE, LON, LAT
     FROM geo_com.public.test
-    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND SECTEUR_D_ACTIVITE  = ?
+    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND SECTEUR_D_ACTIVITE = ?
     """
     result = session.sql(query, [region_choisie, departement_choisie] + size_choisies + [industrie_choisie]).to_pandas()
     
     # Supprime les entreprises sans coordonnées
     result = result.dropna(subset=["LAT", "LON"])
 
-    # Concaténer les noms des entreprises par ville
-    grouped_data = result.groupby(["VILLE", "LAT", "LON"])["NOM"].apply(lambda x: ", ".join(x)).reset_index()
-    grouped_data.rename(columns={"NOM": "ENTREPRISES"}, inplace=True)
+    # Concaténer les noms des entreprises par ville avec le nombre de salariés
+    grouped_data = result.groupby(["VILLE", "LAT", "LON"]).apply(
+        lambda x: ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
+    ).reset_index(name="ENTREPRISES")
 
     return result.drop(columns=["LON", "LAT"]), grouped_data
-
 # Fonction pour récupérer les années disponibles
 def get_years():
     query = "SELECT DISTINCT CREATION FROM geo_com.public.test ORDER BY CREATION ASC"
@@ -101,16 +101,19 @@ if industrie_choisie:
     entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie)
 
     if not entreprises.empty:
-        st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, SECTEUR_D_ACTIVITE '{industrie_choisie}' :")
-        st.table(entreprises)  # On affiche les entreprises sans LON/LAT
-        # Ajouter un bouton pour télécharger les données du tableau
-        csv_data = to_csv(entreprises)  # Convertir les données du tableau en CSV
-        st.download_button(
-            label="Télécharger en CSV",
-            data=csv_data,
-            file_name="entreprises.csv",
-            mime="text/csv"
-        )
+    st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, SECTEUR_D_ACTIVITE '{industrie_choisie}' :")
+    
+    # Afficher le tableau avec les nouvelles colonnes
+    st.table(entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE"]])
+
+    # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
+    csv_data = to_csv(entreprises)
+    st.download_button(
+        label="Télécharger en CSV",
+        data=csv_data,
+        file_name="entreprises.csv",
+        mime="text/csv"
+    )
         # Vérifier si la carte peut être affichée
         if not map_data.empty:
             layer = pdk.Layer(
