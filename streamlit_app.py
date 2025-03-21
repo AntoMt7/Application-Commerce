@@ -74,7 +74,7 @@ def get_entreprises(region_choisie, departement_choisie, size_choisies, industri
         params.append(secteur_choisi)
     
     # Ajouter le filtre sur l'industrie si sélectionnée
-    if industrie_choisie:
+    if industrie_choisie and industrie_choisie != "Aucune industrie":
         query += " AND INDUSTRIE = ?"
         params.append(industrie_choisie)
     
@@ -131,7 +131,9 @@ if size_choisies:
 industrie_choisie = None
 if secteur_choisi:
     existing_industries = get_industries_for_secteur(region_choisie, size_choisies, departement_choisie, secteur_choisi)
-    industrie_choisie = st.selectbox("Sélectionner une industrie", existing_industries, index=0)
+    # Ajouter une option pour "Aucune industrie" pour réinitialiser le filtre
+    existing_industries = ["Aucune industrie"] + existing_industries
+    industrie_choisie = st.selectbox("Sélectionner une industrie", existing_industries)
 
 # Affichage des résultats si tous les critères sont remplis
 if secteur_choisi:
@@ -185,19 +187,4 @@ if secteur_choisi:
 
             view_state = pdk.ViewState(
                 latitude=map_data["LAT"].mean(),
-                longitude=map_data["LON"].mean(),
-                zoom=10
-            )
-
-            deck = pdk.Deck(
-                layers=[layer],
-                initial_view_state=view_state,
-                map_style="mapbox://styles/mapbox/light-v9",  # Fond de carte clair
-                tooltip={"html": "<b>Ville:</b> {VILLE}<br><b>Entreprises:</b> {ENTREPRISES}"}
-            )
-
-            st.pydeck_chart(deck)
-        else:
-            st.write("Aucune donnée de localisation disponible pour affichage sur la carte.")
-    else:
-        st.write("Aucune entreprise ne correspond aux critères sélectionnés.")
+                longitude
