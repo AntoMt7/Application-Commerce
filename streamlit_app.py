@@ -35,10 +35,10 @@ def get_departement(region_choisie):
 
 def get_industrie(region_choisie, size_choisies, departement_choisie):
     query = f"""
-    SELECT DISTINCT INDUSTRIE 
+    SELECT DISTINCT Secteur_d_activite 
     FROM geo_com.public.test 
     WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))})
-    ORDER BY INDUSTRIE ASC
+    ORDER BY Secteur_d_activite ASC
     """
     result = session.sql(query, [region_choisie, departement_choisie] + size_choisies).collect()
     return [row["INDUSTRIE"] for row in result]
