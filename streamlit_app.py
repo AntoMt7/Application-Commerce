@@ -112,20 +112,15 @@ if industrie_choisie:
     if not entreprises.empty:
         st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, SECTEUR_D_ACTIVITE '{industrie_choisie}' :")
         
-        # Afficher le tableau avec les nouvelles colonnes
-        st.table(entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE", "COMMENTAIRES"]])
-
-        # Ajouter les liens cliquables pour les URLs
-        for index, row in entreprises.iterrows():
-            entreprise_name = row['NOM']
-            site_internet = row['SITE_INTERNET']
-            linkedin_url = row['LINKEDIN_URL']
-            
-            # Afficher les liens comme cliquables
-            if site_internet:
-                st.markdown(f"**Site internet de {entreprise_name}:** [Cliquer ici]({site_internet})")
-            if linkedin_url:
-                st.markdown(f"**LinkedIn de {entreprise_name}:** [Cliquer ici]({linkedin_url})")
+        # Préparer les liens cliquables pour chaque entreprise
+        entreprises["SITE_INTERNET"] = entreprises["SITE_INTERNET"].apply(lambda x: f"[Site Web]({x})" if pd.notna(x) else "")
+        entreprises["LINKEDIN_URL"] = entreprises["LINKEDIN_URL"].apply(lambda x: f"[LinkedIn]({x})" if pd.notna(x) else "")
+        
+        # Convertir le DataFrame en HTML pour rendre les liens cliquables
+        html_table = entreprises.to_html(escape=False)
+        
+        # Afficher le tableau avec les liens cliquables
+        st.markdown(html_table, unsafe_allow_html=True)
 
         # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
         csv_data = to_csv(entreprises)
