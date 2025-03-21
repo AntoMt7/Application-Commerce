@@ -114,7 +114,19 @@ if industrie_choisie:
         
         # Afficher le tableau avec les nouvelles colonnes
         st.table(entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE", "COMMENTAIRES"]])
-    
+
+        # Ajouter les liens cliquables pour les URLs
+        for index, row in entreprises.iterrows():
+            entreprise_name = row['NOM']
+            site_internet = row['SITE_INTERNET']
+            linkedin_url = row['LINKEDIN_URL']
+            
+            # Afficher les liens comme cliquables
+            if site_internet:
+                st.markdown(f"**Site internet de {entreprise_name}:** [Cliquer ici]({site_internet})")
+            if linkedin_url:
+                st.markdown(f"**LinkedIn de {entreprise_name}:** [Cliquer ici]({linkedin_url})")
+
         # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
         csv_data = to_csv(entreprises)
         st.download_button(
