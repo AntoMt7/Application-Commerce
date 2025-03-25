@@ -5,6 +5,7 @@ import snowflake.connector
 from snowflake.snowpark.session import Session
 import pandas as pd
 import requests
+from typing import Any, Dict, List, Optional
 
 # Connexion à Snowflake
 def get_snowflake_session():
