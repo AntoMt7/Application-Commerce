@@ -1,5 +1,5 @@
 pandas
 snowflake-connector-python
 snowflake-snowpark-python
-import requests
-from typing import Any, Dict, List, Optional
+requests
+typing
