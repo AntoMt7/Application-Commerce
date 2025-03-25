@@ -127,8 +127,10 @@ def send_message(prompt: str) -> Dict[str, Any]:
         "semantic_model_file": f"@{DATABASE}.{SCHEMA}.{STAGE}/{FILE}",
     }
 
+    # Essayer d'obtenir un jeton d'authentification
     token = get_snowflake_token()  # Obtient le jeton ici
 
+    # Effectuer l'appel à l'API
     resp = requests.post(
         url=f"https://{HOST}/api/v2/cortex/analyst/message",
         json=request_body,
@@ -139,15 +141,32 @@ def send_message(prompt: str) -> Dict[str, Any]:
     )
 
     request_id = resp.headers.get("X-Snowflake-Request-Id")
-    if resp.status_code == 401:  # Si le jeton a expiré, on tente de se reconnecter
+    
+    # Vérification du code d'état 401 (authentification expirée)
+    if resp.status_code == 401:
         st.error("Erreur d'authentification, veuillez vous reconnecter.")
-        # Réexécuter ou renvoyer une logique de ré-authentification ici
-    elif resp.status_code < 400:
+        
+        # Regénérer un jeton et réessayer l'appel
+        token = get_snowflake_token()  # Essayez de récupérer un nouveau jeton
+        resp = requests.post(
+            url=f"https://{HOST}/api/v2/cortex/analyst/message",
+            json=request_body,
+            headers={
+                "Authorization": f'Snowflake Token="{token}"',  # Réutiliser le nouveau jeton
+                "Content-Type": "application/json",
+            },
+        )
+
+    # Si le code d'état est toujours inférieur à 400, retourner la réponse
+    if resp.status_code < 400:
         return {**resp.json(), "request_id": request_id}
+
+    # Si une autre erreur se produit, lever une exception
     else:
         raise Exception(
             f"Erreur (id: {request_id}) - Statut {resp.status_code}: {resp.text}"
         )
+
 
 def display_content(content: List[Dict[str, str]], request_id: Optional[str] = None) -> None:
     """Affiche la réponse de Cortex Analyst."""
