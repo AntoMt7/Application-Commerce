@@ -4,8 +4,6 @@ import io
 import snowflake.connector
 from snowflake.snowpark.session import Session
 import pandas as pd
-from typing import Any, Dict, List, Optional
-import requests
 
 # Connexion à Snowflake
 def get_snowflake_session():
@@ -18,23 +16,6 @@ def get_snowflake_session():
         "schema": st.secrets["snowflake"]["schema"]
     }
     return Session.builder.configs(connection_parameters).create()
-
-def get_snowflake_token():
-    # Utilisation de snowflake.connector pour obtenir un jeton d'authentification
-    conn = snowflake.connector.connect(
-        user=st.secrets["snowflake"]["user"],
-        password=st.secrets["snowflake"]["password"],
-        account=st.secrets["snowflake"]["account"],
-        warehouse=st.secrets["snowflake"]["warehouse"],
-        database=st.secrets["snowflake"]["database"],
-        schema=st.secrets["snowflake"]["schema"]
-    )
-    # Exécute une requête pour obtenir le jeton (exemple avec une requête simple)
-    cursor = conn.cursor()
-    cursor.execute("SELECT CURRENT_SESSION()")
-    session_id = cursor.fetchone()[0]
-    
-    return session_id
 
 # Fonction pour rajouter des commentaires
 def save_commentaire(nom, commentaire):
@@ -120,150 +101,10 @@ def to_csv(df):
     csv = df.to_csv(index=False)  # Convertir le DataFrame en CSV sans index
     return csv
 
-def send_message(prompt: str) -> Dict[str, Any]:
-    """Appelle l'API REST de Cortex Analyst et retourne la réponse."""
-    request_body = {
-        "messages": [{"role": "user", "content": [{"type": "text", "text": prompt}]}],
-        "semantic_model_file": f"@{DATABASE}.{SCHEMA}.{STAGE}/{FILE}",
-    }
-
-    # Essayer d'obtenir un jeton d'authentification
-    token = get_snowflake_token()  # Obtient le jeton ici
-
-    # Effectuer l'appel à l'API
-    resp = requests.post(
-        url=f"https://{HOST}/api/v2/cortex/analyst/message",
-        json=request_body,
-        headers={
-            "Authorization": f'Snowflake Token="{token}"',  # Utilise le jeton ici
-            "Content-Type": "application/json",
-        },
-    )
-
-    request_id = resp.headers.get("X-Snowflake-Request-Id")
-    
-    # Vérification du code d'état 401 (authentification expirée)
-    if resp.status_code == 401:
-        st.error("Erreur d'authentification, veuillez vous reconnecter.")
-        
-        # Regénérer un jeton et réessayer l'appel
-        token = get_snowflake_token()  # Essayez de récupérer un nouveau jeton
-        resp = requests.post(
-            url=f"https://{HOST}/api/v2/cortex/analyst/message",
-            json=request_body,
-            headers={
-                "Authorization": f'Snowflake Token="{token}"',  # Réutiliser le nouveau jeton
-                "Content-Type": "application/json",
-            },
-        )
-
-    # Si le code d'état est toujours inférieur à 400, retourner la réponse
-    if resp.status_code < 400:
-        return {**resp.json(), "request_id": request_id}
-
-    # Si une autre erreur se produit, lever une exception
-    else:
-        raise Exception(
-            f"Erreur (id: {request_id}) - Statut {resp.status_code}: {resp.text}"
-        )
-
-
-def display_content(content: List[Dict[str, str]], request_id: Optional[str] = None) -> None:
-    """Affiche la réponse de Cortex Analyst."""
-    if request_id:
-        with st.expander("Request ID", expanded=False):
-            st.markdown(request_id)
-
-    for item in content:
-        if item["type"] == "text":
-            st.markdown(item["text"])
-        elif item["type"] == "sql":
-            with st.expander("Requête SQL générée", expanded=False):
-                st.code(item["statement"], language="sql")
-            with st.expander("Résultats", expanded=True):
-                df = pd.read_sql(item["statement"], st.session_state.CONN)
-                st.dataframe(df)
-        elif item["type"] == "suggestions":
-            with st.expander("Suggestions", expanded=True):
-                for suggestion in item["suggestions"]:
-                    if st.button(suggestion):
-                        process_message(suggestion)
-
-def process_message(prompt: str) -> None:
-    """Ajoute la requête et la réponse au chat."""
-    st.session_state.messages.append(
-        {"role": "user", "content": [{"type": "text", "text": prompt}]}
-    )
-
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    content = None  # Initialisation de content
-    request_id = None  # Initialisation de request_id
-
-    with st.chat_message("assistant"):
-        with st.spinner("Génération en cours..."):
-            try:
-                response = send_message(prompt=prompt)
-                
-                # Vérification que la réponse est valide et contient les clés attendues
-                if response is None:
-                    st.error("La réponse de l'API est vide.")
-                    return
-
-                request_id = response.get("request_id")
-                if "message" not in response or "content" not in response["message"]:
-                    st.error("La réponse de l'API ne contient pas les informations attendues.")
-                    return
-
-                content = response["message"].get("content")
-
-                # Vérifiez si la réponse est valide
-                if content is None:
-                    st.error("Aucune réponse valide reçue.")
-                    return
-                if request_id is None:
-                    st.error("Le Request ID est manquant.")
-                    return
-
-                display_content(content=content, request_id=request_id)
-
-            except Exception as e:
-                st.error(f"Erreur lors de l'appel de l'API: {str(e)}")
-
-    # Assurez-vous que content et request_id sont définis avant de les ajouter
-    if content is not None and request_id is not None:
-        st.session_state.messages.append(
-            {"role": "assistant", "content": content, "request_id": request_id}
-        )
-
-
-
-DATABASE = "geo_com"
-SCHEMA = "public"
-STAGE = "COMMERCE_STAGE" 
-FILE = "commerce"    
-HOST = "TALBDQV-KI77978.snowflakecomputing.com"
-
 # Interface utilisateur
 st.title("Application commerciale")
 session = get_snowflake_session()
 
-# Initialisation de la connexion Snowflake dans st.session_state
-if "CONN" not in st.session_state:
-    session = get_snowflake_session()
-    st.session_state.CONN = session 
-    
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-# Vérifier si l'utilisateur pose une question
-if user_input := st.chat_input("Posez votre question à Cortex Analyst :"):
-    process_message(prompt=user_input)
-
-# Afficher les messages existants
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        display_content(message["content"], request_id=message.get("request_id"))
 # Sélection de la région
 existing_regions = get_region()
 region_choisie = st.selectbox("Sélectionner une région", existing_regions)
