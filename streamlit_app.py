@@ -28,6 +28,7 @@ STAGE = "COMMERCE_STAGE"
 FILE = "commerce.yaml"
 WAREHOUSE = st.secrets["snowflake"]["warehouse"]
 DATABASE = st.secrets["snowflake"]["database"]
+SCHEMA = st.secrets["snowflake"]["schema"]
 
 # Fonction pour rajouter des commentaires
 def save_commentaire(nom, commentaire):
