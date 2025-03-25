@@ -169,8 +169,9 @@ def process_message(prompt: str) -> None:
 
 DATABASE = "geo_com"
 SCHEMA = "public"
-STAGE = "COMMERCE_STAGE"  # Remplace par le bon nom de STAGE
-FILE = "commerce"    # Remplace par le bon fichier utilisé
+STAGE = "COMMERCE_STAGE" 
+FILE = "commerce"    
+HOST = "TALBDQV-KI77978.snowflakecomputing.com"
 
 # Interface utilisateur
 st.title("Application commerciale")
