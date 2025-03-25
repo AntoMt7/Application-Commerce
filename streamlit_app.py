@@ -201,17 +201,10 @@ st.title("Application commerciale")
 session = get_snowflake_session()
 # Assurez-vous que la connexion Snowflake est active
 if 'CONN' not in st.session_state or st.session_state.CONN is None:
-    st.session_state.CONN = snowflake.connector.connect(
-        user=USER,
-        password=PASSWORD,
-        account=ACCOUNT,
-        host=HOST,
-        warehouse=WAREHOUSE,
-        role=ROLE,
-    )
+    st.session_state.CONN = get_snowflake_session()
+    
 
-# Récupérer le token correctement
-session_token = st.session_state.CONN._rest._token if hasattr(st.session_state.CONN, '_rest') else None
+session_token = st.session_state.CONN._conn._rest._token
 
 # Vérifier que le token est bien récupéré
 if not session_token:
