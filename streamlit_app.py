@@ -17,6 +17,12 @@ def get_snowflake_session():
     }
     return Session.builder.configs(connection_parameters).create()
 
+HOST = "TALBDQV-KI77978.snowflakecomputing.com"
+ACCOUNT = st.secrets["snowflake"]["account"]
+USER = "ANTOINE"
+PASSWORD = st.secrets["snowflake"]["password"]
+ROLE = "ACCOUNT_ADMIN"
+
 # Fonction pour rajouter des commentaires
 def save_commentaire(nom, commentaire):
     """Met à jour le commentaire dans la base de données Snowflake."""
@@ -101,10 +107,21 @@ def to_csv(df):
     csv = df.to_csv(index=False)  # Convertir le DataFrame en CSV sans index
     return csv
 
+
+
 # Interface utilisateur
 st.title("Application commerciale")
 session = get_snowflake_session()
-
+if 'CONN' not in st.session_state or st.session_state.CONN is None:
+    st.session_state.CONN = snowflake.connector.connect(
+        user=USER,
+        password=PASSWORD,
+        account=ACCOUNT,
+        host=HOST,
+        port=443,
+        warehouse=WAREHOUSE,
+        role=ROLE,
+    )
 # Sélection de la région
 existing_regions = get_region()
 region_choisie = st.selectbox("Sélectionner une région", existing_regions)
