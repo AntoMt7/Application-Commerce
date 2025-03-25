@@ -35,10 +35,7 @@ def get_snowflake_token():
     session_id = cursor.fetchone()[0]
     
     return session_id
-# Initialisation de la connexion Snowflake dans st.session_state
-if "CONN" not in st.session_state:
-    session = get_snowflake_session()
-    st.session_state.CONN = session 
+
 # Fonction pour rajouter des commentaires
 def save_commentaire(nom, commentaire):
     """Met à jour le commentaire dans la base de données Snowflake."""
@@ -198,6 +195,11 @@ HOST = "TALBDQV-KI77978.snowflakecomputing.com"
 # Interface utilisateur
 st.title("Application commerciale")
 session = get_snowflake_session()
+
+# Initialisation de la connexion Snowflake dans st.session_state
+if "CONN" not in st.session_state:
+    session = get_snowflake_session()
+    st.session_state.CONN = session 
     
 if "messages" not in st.session_state:
     st.session_state.messages = []
