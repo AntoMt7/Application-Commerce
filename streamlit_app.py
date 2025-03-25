@@ -177,6 +177,9 @@ HOST = "TALBDQV-KI77978.snowflakecomputing.com"
 st.title("Application commerciale")
 session = get_snowflake_session()
 
+if "CONN" not in st.session_state:
+    st.session_state.CONN = connection_parameters
+    
 if "messages" not in st.session_state:
     st.session_state.messages = []
 # Vérifier si l'utilisateur pose une question
