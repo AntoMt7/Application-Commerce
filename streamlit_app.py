@@ -171,6 +171,8 @@ def process_message(prompt: str) -> None:
 st.title("Application commerciale")
 session = get_snowflake_session()
 
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 # Vérifier si l'utilisateur pose une question
 if user_input := st.chat_input("Posez votre question à Cortex Analyst :"):
     process_message(prompt=user_input)
