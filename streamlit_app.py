@@ -179,6 +179,9 @@ def process_message(prompt: str) -> None:
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    content = None  # Initialisation de content
+    request_id = None  # Initialisation de request_id
+
     with st.chat_message("assistant"):
         with st.spinner("Génération en cours..."):
             try:
@@ -199,9 +202,12 @@ def process_message(prompt: str) -> None:
             except Exception as e:
                 st.error(f"Erreur lors de l'appel de l'API: {str(e)}")
 
-    st.session_state.messages.append(
-        {"role": "assistant", "content": content, "request_id": request_id}
-    )
+    # Assurez-vous que content et request_id sont définis avant de les ajouter
+    if content is not None and request_id is not None:
+        st.session_state.messages.append(
+            {"role": "assistant", "content": content, "request_id": request_id}
+        )
+
 
 
 DATABASE = "geo_com"
