@@ -207,6 +207,10 @@ if 'CONN' not in st.session_state or st.session_state.CONN is None:
         warehouse=WAREHOUSE,
         role=ROLE,
     )
+
+if "active_suggestion" not in st.session_state:
+    st.session_state.active_suggestion = None
+    
 # Sélection de la région
 existing_regions = get_region()
 region_choisie = st.selectbox("Sélectionner une région", existing_regions)
