@@ -18,7 +18,10 @@ def get_snowflake_session():
         "schema": st.secrets["snowflake"]["schema"]
     }
     return Session.builder.configs(connection_parameters).create()
-
+# Initialisation de la connexion Snowflake dans st.session_state
+if "CONN" not in st.session_state:
+    session = get_snowflake_session()
+    st.session_state.CONN = session 
 # Fonction pour rajouter des commentaires
 def save_commentaire(nom, commentaire):
     """Met à jour le commentaire dans la base de données Snowflake."""
@@ -176,9 +179,6 @@ HOST = "TALBDQV-KI77978.snowflakecomputing.com"
 # Interface utilisateur
 st.title("Application commerciale")
 session = get_snowflake_session()
-
-if "CONN" not in st.session_state:
-    st.session_state.CONN = connection_parameters
     
 if "messages" not in st.session_state:
     st.session_state.messages = []
