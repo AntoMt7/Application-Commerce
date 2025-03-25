@@ -139,12 +139,16 @@ def send_message(prompt: str) -> Dict[str, Any]:
     )
 
     request_id = resp.headers.get("X-Snowflake-Request-Id")
-    if resp.status_code < 400:
+    if resp.status_code == 401:  # Si le jeton a expiré, on tente de se reconnecter
+        st.error("Erreur d'authentification, veuillez vous reconnecter.")
+        # Réexécuter ou renvoyer une logique de ré-authentification ici
+    elif resp.status_code < 400:
         return {**resp.json(), "request_id": request_id}
     else:
         raise Exception(
             f"Erreur (id: {request_id}) - Statut {resp.status_code}: {resp.text}"
         )
+
 def display_content(content: List[Dict[str, str]], request_id: Optional[str] = None) -> None:
     """Affiche la réponse de Cortex Analyst."""
     if request_id:
