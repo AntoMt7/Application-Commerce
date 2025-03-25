@@ -18,6 +18,23 @@ def get_snowflake_session():
         "schema": st.secrets["snowflake"]["schema"]
     }
     return Session.builder.configs(connection_parameters).create()
+
+def get_snowflake_token():
+    # Utilisation de snowflake.connector pour obtenir un jeton d'authentification
+    conn = snowflake.connector.connect(
+        user=st.secrets["snowflake"]["user"],
+        password=st.secrets["snowflake"]["password"],
+        account=st.secrets["snowflake"]["account"],
+        warehouse=st.secrets["snowflake"]["warehouse"],
+        database=st.secrets["snowflake"]["database"],
+        schema=st.secrets["snowflake"]["schema"]
+    )
+    # Exécute une requête pour obtenir le jeton (exemple avec une requête simple)
+    cursor = conn.cursor()
+    cursor.execute("SELECT CURRENT_SESSION()")
+    session_id = cursor.fetchone()[0]
+    
+    return session_id
 # Initialisation de la connexion Snowflake dans st.session_state
 if "CONN" not in st.session_state:
     session = get_snowflake_session()
@@ -113,11 +130,13 @@ def send_message(prompt: str) -> Dict[str, Any]:
         "semantic_model_file": f"@{DATABASE}.{SCHEMA}.{STAGE}/{FILE}",
     }
 
+    token = get_snowflake_token()  # Obtient le jeton ici
+
     resp = requests.post(
         url=f"https://{HOST}/api/v2/cortex/analyst/message",
         json=request_body,
         headers={
-            "Authorization": f'Snowflake Token="{st.session_state.CONN.rest.token}"',
+            "Authorization": f'Snowflake Token="{token}"',  # Utilise le jeton ici
             "Content-Type": "application/json",
         },
     )
