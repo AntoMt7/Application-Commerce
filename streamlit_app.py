@@ -27,6 +27,7 @@ ROLE = "ACCOUNTADMIN"
 STAGE = "COMMERCE_STAGE"
 FILE = "commerce.yaml"
 WAREHOUSE = st.secrets["snowflake"]["warehouse"]
+DATABASE = st.secrets["snowflake"]["database"]
 
 # Fonction pour rajouter des commentaires
 def save_commentaire(nom, commentaire):
