@@ -4,6 +4,8 @@ import io
 import snowflake.connector
 from snowflake.snowpark.session import Session
 import pandas as pd
+from typing import Any, Dict, List, Optional
+import requests
 
 # Connexion à Snowflake
 def get_snowflake_session():
@@ -101,10 +103,82 @@ def to_csv(df):
     csv = df.to_csv(index=False)  # Convertir le DataFrame en CSV sans index
     return csv
 
+def send_message(prompt: str) -> Dict[str, Any]:
+    """Appelle l'API REST de Cortex Analyst et retourne la réponse."""
+    request_body = {
+        "messages": [{"role": "user", "content": [{"type": "text", "text": prompt}]}],
+        "semantic_model_file": f"@{DATABASE}.{SCHEMA}.{STAGE}/{FILE}",
+    }
+
+    resp = requests.post(
+        url=f"https://{HOST}/api/v2/cortex/analyst/message",
+        json=request_body,
+        headers={
+            "Authorization": f'Snowflake Token="{st.session_state.CONN.rest.token}"',
+            "Content-Type": "application/json",
+        },
+    )
+
+    request_id = resp.headers.get("X-Snowflake-Request-Id")
+    if resp.status_code < 400:
+        return {**resp.json(), "request_id": request_id}
+    else:
+        raise Exception(
+            f"Erreur (id: {request_id}) - Statut {resp.status_code}: {resp.text}"
+        )
+def display_content(content: List[Dict[str, str]], request_id: Optional[str] = None) -> None:
+    """Affiche la réponse de Cortex Analyst."""
+    if request_id:
+        with st.expander("Request ID", expanded=False):
+            st.markdown(request_id)
+
+    for item in content:
+        if item["type"] == "text":
+            st.markdown(item["text"])
+        elif item["type"] == "sql":
+            with st.expander("Requête SQL générée", expanded=False):
+                st.code(item["statement"], language="sql")
+            with st.expander("Résultats", expanded=True):
+                df = pd.read_sql(item["statement"], st.session_state.CONN)
+                st.dataframe(df)
+        elif item["type"] == "suggestions":
+            with st.expander("Suggestions", expanded=True):
+                for suggestion in item["suggestions"]:
+                    if st.button(suggestion):
+                        process_message(suggestion)
+
+def process_message(prompt: str) -> None:
+    """Ajoute la requête et la réponse au chat."""
+    st.session_state.messages.append(
+        {"role": "user", "content": [{"type": "text", "text": prompt}]}
+    )
+
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        with st.spinner("Génération en cours..."):
+            response = send_message(prompt=prompt)
+            request_id = response["request_id"]
+            content = response["message"]["content"]
+            display_content(content=content, request_id=request_id)
+
+    st.session_state.messages.append(
+        {"role": "assistant", "content": content, "request_id": request_id}
+    )
+
 # Interface utilisateur
 st.title("Application commerciale")
 session = get_snowflake_session()
 
+# Vérifier si l'utilisateur pose une question
+if user_input := st.chat_input("Posez votre question à Cortex Analyst :"):
+    process_message(prompt=user_input)
+
+# Afficher les messages existants
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        display_content(message["content"], request_id=message.get("request_id"))
 # Sélection de la région
 existing_regions = get_region()
 region_choisie = st.selectbox("Sélectionner une région", existing_regions)
