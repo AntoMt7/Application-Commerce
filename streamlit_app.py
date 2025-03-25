@@ -181,14 +181,28 @@ def process_message(prompt: str) -> None:
 
     with st.chat_message("assistant"):
         with st.spinner("Génération en cours..."):
-            response = send_message(prompt=prompt)
-            request_id = response["request_id"]
-            content = response["message"]["content"]
-            display_content(content=content, request_id=request_id)
+            try:
+                response = send_message(prompt=prompt)
+                request_id = response.get("request_id")
+                content = response.get("message", {}).get("content")
+
+                # Vérifiez si la réponse est valide
+                if content is None:
+                    st.error("Aucune réponse valide reçue.")
+                    return
+                if request_id is None:
+                    st.error("Le Request ID est manquant.")
+                    return
+
+                display_content(content=content, request_id=request_id)
+
+            except Exception as e:
+                st.error(f"Erreur lors de l'appel de l'API: {str(e)}")
 
     st.session_state.messages.append(
         {"role": "assistant", "content": content, "request_id": request_id}
     )
+
 
 DATABASE = "geo_com"
 SCHEMA = "public"
