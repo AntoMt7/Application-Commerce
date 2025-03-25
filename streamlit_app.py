@@ -26,6 +26,7 @@ PASSWORD = st.secrets["snowflake"]["password"]
 ROLE = "ACCOUNT_ADMIN"
 STAGE = "COMMERCE_STAGE"
 FILE = "commerce.yaml"
+WAREHOUSE = st.secrets["snowflake"]["warehouse"]
 
 # Fonction pour rajouter des commentaires
 def save_commentaire(nom, commentaire):
