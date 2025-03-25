@@ -186,8 +186,18 @@ def process_message(prompt: str) -> None:
         with st.spinner("Génération en cours..."):
             try:
                 response = send_message(prompt=prompt)
+                
+                # Vérification que la réponse est valide et contient les clés attendues
+                if response is None:
+                    st.error("La réponse de l'API est vide.")
+                    return
+
                 request_id = response.get("request_id")
-                content = response.get("message", {}).get("content")
+                if "message" not in response or "content" not in response["message"]:
+                    st.error("La réponse de l'API ne contient pas les informations attendues.")
+                    return
+
+                content = response["message"].get("content")
 
                 # Vérifiez si la réponse est valide
                 if content is None:
