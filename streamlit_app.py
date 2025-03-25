@@ -167,6 +167,11 @@ def process_message(prompt: str) -> None:
         {"role": "assistant", "content": content, "request_id": request_id}
     )
 
+DATABASE = "geo_com"
+SCHEMA = "public"
+STAGE = "COMMERCE_STAGE"  # Remplace par le bon nom de STAGE
+FILE = "commerce"    # Remplace par le bon fichier utilisé
+
 # Interface utilisateur
 st.title("Application commerciale")
 session = get_snowflake_session()
