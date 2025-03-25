@@ -199,16 +199,32 @@ def display_content(
 ###############################################################################
 st.title("Application commerciale")
 session = get_snowflake_session()
+# Assurez-vous que la connexion Snowflake est active
 if 'CONN' not in st.session_state or st.session_state.CONN is None:
     st.session_state.CONN = snowflake.connector.connect(
         user=USER,
         password=PASSWORD,
         account=ACCOUNT,
         host=HOST,
-        port=443,
         warehouse=WAREHOUSE,
         role=ROLE,
     )
+
+# Récupérer le token correctement
+session_token = st.session_state.CONN._rest._token if hasattr(st.session_state.CONN, '_rest') else None
+
+# Vérifier que le token est bien récupéré
+if not session_token:
+    st.error("Impossible de récupérer le token d'authentification de Snowflake.")
+else:
+    st.success("Token d'authentification récupéré avec succès !")
+
+# Remplacez l'authentification dans votre requête API
+headers = {
+    "Authorization": f'Snowflake Token="{session_token}"',
+    "Content-Type": "application/json",
+}
+
 
 if "active_suggestion" not in st.session_state:
     st.session_state.active_suggestion = None
