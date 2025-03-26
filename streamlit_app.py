@@ -144,7 +144,7 @@ if secteur_choisi:
         
         # Afficher le tableau avec les nouvelles colonnes, et permettre l'édition de la colonne COMMENTAIRES
         edited_df = st.data_editor(
-            entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "COMMENTAIRES"]],
+            entreprises[["NOM", "CREATION", "VILLE", "SIZE", "SITE_INTERNET", "LINKEDIN_URL", "COMMENTAIRES"]],
             use_container_width=True,  # Étire sur toute la largeur
             height=600,  # Ajuste la hauteur du tableau
             column_config={
