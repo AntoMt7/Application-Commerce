@@ -142,13 +142,23 @@ if secteur_choisi:
     if not entreprises.empty:
         st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, secteur d'activité '{secteur_choisi}' :")
         
-        # Afficher le tableau avec les nouvelles colonnes
-        st.dataframe(
-                    entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "COMMENTAIRES"]],
-                    use_container_width=True,  # Étire sur toute la largeur
-                    height=600  # Ajuste la hauteur du tableau
-                )
-    
+        # Afficher le tableau avec les nouvelles colonnes, et permettre l'édition de la colonne COMMENTAIRES
+        edited_df = st.data_editor(
+            entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "COMMENTAIRES"]],
+            use_container_width=True,  # Étire sur toute la largeur
+            height=600,  # Ajuste la hauteur du tableau
+            column_config={
+                "COMMENTAIRES": st.column_config.TextColumn("Commentaires")  # Rendre la colonne des commentaires éditable
+            }
+        )
+
+        # Sauvegarde des commentaires modifiés
+        if not entreprises.equals(edited_df):  # Si les données ont été modifiées
+            for index, row in edited_df.iterrows():
+                if row["COMMENTAIRES"] != entreprises.at[index, "COMMENTAIRES"]:
+                    save_commentaire(row["NOM"], row["COMMENTAIRES"])
+            st.success("Les commentaires ont été mis à jour.")
+
         # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
         csv_data = to_csv(entreprises)
         st.download_button(
@@ -157,26 +167,6 @@ if secteur_choisi:
             file_name="entreprises.csv",
             mime="text/csv"
         )
-
-        # Sélectionner une entreprise à partir du tableau pour ajouter un commentaire
-        entreprise_choisie = st.selectbox("Sélectionner une entreprise pour ajouter un commentaire", entreprises["NOM"].tolist())
-
-        # Récupération du commentaire existant, s'il y en a
-        entreprise_selected = entreprises[entreprises["NOM"] == entreprise_choisie].iloc[0]
-        commentaire_actuel = entreprise_selected["COMMENTAIRES"] if pd.notna(entreprise_selected["COMMENTAIRES"]) else ""
-        
-        # Affichage de la zone de texte pour ajouter/modifier un commentaire
-        new_comment = st.text_area(f"Commentaire pour {entreprise_choisie}:",
-                                   value=commentaire_actuel, 
-                                   key=f"comment_{entreprise_choisie}")
-        
-        # Bouton pour enregistrer le commentaire
-        if st.button(f"Enregistrer pour {entreprise_choisie}") :
-            if new_comment != commentaire_actuel:  # Vérifie si le commentaire a changé
-                save_commentaire(entreprise_choisie, new_comment)
-                st.success(f"Commentaire mis à jour pour {entreprise_choisie}!")
-            else:
-                st.info(f"Aucun changement pour {entreprise_choisie}.")
 
         # Vérifier si la carte peut être affichée
         if not map_data.empty:
