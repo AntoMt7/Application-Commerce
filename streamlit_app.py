@@ -153,7 +153,7 @@ if secteur_choisi:
         )
 
         # Sauvegarde des commentaires modifiés
-        if not entreprises.equals(edited_df):  # Si les données ont été modifiées
+        if not entreprises["COMMENTAIRES"].equals(edited_df["COMMENTAIRES"]):  # Si seulement les commentaires ont été modifiés
             for index, row in edited_df.iterrows():
                 if row["COMMENTAIRES"] != entreprises.at[index, "COMMENTAIRES"]:
                     save_commentaire(row["NOM"], row["COMMENTAIRES"])
