@@ -30,7 +30,7 @@ def get_region():
     return [row["REGION"] for row in result]
 
 def get_size():
-    query = "SELECT DISTINCT SIZE FROM geo_com.public.test ORDER BY SIZE ASC"
+    query = "SELECT DISTINCT SIZE FROM geo_com.public.test ORDER BY SIZE DESC"
     result = session.sql(query).collect()
     return [row["SIZE"] for row in result]
 
