@@ -145,7 +145,7 @@ if secteur_choisi:
         # Afficher le tableau avec les nouvelles colonnes
         st.dataframe(
                     entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE", "COMMENTAIRES"]],
-                    use_container_width=True,  # Étire sur toute la largeur
+                    width = 1500,  # Étire sur toute la largeur
                     height=600  # Ajuste la hauteur du tableau
                 )
     
