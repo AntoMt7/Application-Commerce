@@ -20,29 +20,29 @@ def get_snowflake_session():
 # Fonction pour rajouter des commentaires
 def save_commentaire(nom, commentaire):
     """Met à jour le commentaire dans la base de données Snowflake."""
-    query = "UPDATE geo_com.public.test SET COMMENTAIRES = ? WHERE NOM = ?"
+    query = "UPDATE appli_commerce.public.commerce SET COMMENTAIRES = ? WHERE NOM = ?"
     session.sql(query, [commentaire, nom]).collect()
 
 # Fonctions pour récupérer les données
 def get_region():
-    query = "SELECT DISTINCT REGION FROM geo_com.public.test ORDER BY REGION ASC"
+    query = "SELECT DISTINCT REGION FROM appli_commerce.public.commerce ORDER BY REGION ASC"
     result = session.sql(query).collect()
     return [row["REGION"] for row in result]
 
 def get_size():
-    query = "SELECT DISTINCT SIZE FROM geo_com.public.test ORDER BY SIZE DESC"
+    query = "SELECT DISTINCT SIZE FROM appli_commerce.public.commerce ORDER BY SIZE DESC"
     result = session.sql(query).collect()
     return [row["SIZE"] for row in result]
 
 def get_departement(region_choisie):
-    query = "SELECT DISTINCT DEPARTEMENT FROM geo_com.public.test WHERE REGION = ? ORDER BY DEPARTEMENT ASC"
+    query = "SELECT DISTINCT DEPARTEMENT FROM appli_commerce.public.commerce WHERE REGION = ? ORDER BY DEPARTEMENT ASC"
     result = session.sql(query, [region_choisie]).collect()
     return [row["DEPARTEMENT"] for row in result]
 
 def get_industrie(region_choisie, size_choisies, departement_choisie):
     query = f"""
     SELECT DISTINCT SECTEUR_D_ACTIVITE 
-    FROM geo_com.public.test 
+    FROM appli_commerce.public.commerce 
     WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))})
     ORDER BY SECTEUR_D_ACTIVITE ASC
     """
@@ -52,7 +52,7 @@ def get_industrie(region_choisie, size_choisies, departement_choisie):
 def get_industries_for_secteur(region_choisie, size_choisies, departement_choisie, secteur_choisi):
     query = f"""
     SELECT DISTINCT INDUSTRIE 
-    FROM geo_com.public.test 
+    FROM appli_commerce.public.commerce 
     WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND SECTEUR_D_ACTIVITE = ?
     ORDER BY INDUSTRIE ASC
     """
@@ -62,7 +62,7 @@ def get_industries_for_secteur(region_choisie, size_choisies, departement_choisi
 def get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie=None, secteur_choisi=None):
     query = f"""
     SELECT NOM, CREATION, VILLE, SITE_INTERNET, LINKEDIN_URL, SIZE, INDUSTRIE, COMMENTAIRES, LON, LAT
-    FROM geo_com.public.test
+    FROM appli_commerce.public.commerce
     WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))})
     """
     
@@ -92,7 +92,7 @@ def get_entreprises(region_choisie, departement_choisie, size_choisies, industri
 
 # Fonction pour récupérer les années disponibles
 def get_years():
-    query = "SELECT DISTINCT CREATION FROM geo_com.public.test ORDER BY CREATION ASC"
+    query = "SELECT DISTINCT CREATION FROM appli_commerce.public.commerce ORDER BY CREATION ASC"
     result = session.sql(query).collect()
     return [row["CREATION"] for row in result]
 
