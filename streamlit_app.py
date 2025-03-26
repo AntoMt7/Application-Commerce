@@ -143,7 +143,11 @@ if secteur_choisi:
         st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, secteur d'activité '{secteur_choisi}' :")
         
         # Afficher le tableau avec les nouvelles colonnes
-        st.table(entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE", "COMMENTAIRES"]])
+        st.dataframe(
+                    entreprises[["NOM", "CREATION", "VILLE", "SITE_INTERNET", "LINKEDIN_URL", "SIZE", "INDUSTRIE", "COMMENTAIRES"]],
+                    use_container_width=True,  # Étire sur toute la largeur
+                    height=600  # Ajuste la hauteur du tableau
+                )
     
         # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
         csv_data = to_csv(entreprises)
