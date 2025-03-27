@@ -138,46 +138,7 @@ with st.sidebar:
         existing_industries = ["Aucune industrie"] + existing_industries
         industrie_choisie = st.selectbox("Sélectionner une industrie", existing_industries)
     
-    # Graphiques dans la sidebar
-    if secteur_choisi:
-        entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie, secteur_choisi)
-    
-        if not entreprises.empty:
-            # Distribution par taille d'entreprise
-            st.subheader("Distribution des entreprises par taille")
-            size_distribution = entreprises['SIZE'].value_counts()
-            fig_size = px.pie(
-                values=size_distribution.values, 
-                names=size_distribution.index, 
-                title="Répartition des entreprises par nombre d'employés"
-            )
-            st.plotly_chart(fig_size)
-            
-            # Création d'entreprises par année
-            st.subheader("Création d'entreprises par année")
-            creation_distribution = entreprises['CREATION'].value_counts().sort_index()
-            fig_creation = px.bar(
-                x=creation_distribution.index, 
-                y=creation_distribution.values, 
-                labels={'x':'Année', 'y':'Nombre d\'entreprises'},
-                title="Nombre d'entreprises par année de création"
-            )
-            st.plotly_chart(fig_creation)
-            
-            # Répartition par ville
-            st.subheader("Répartition des entreprises par ville")
-            city_counts = entreprises['VILLE'].value_counts().head(10)
-            fig_city = px.bar(
-                x=city_counts.index, 
-                y=city_counts.values, 
-                labels={'x':'Ville', 'y':'Nombre d\'entreprises'},
-                title="Top 10 des villes par nombre d'entreprises"
-            )
-            fig_city.update_xaxes(tickangle=45)
-            st.plotly_chart(fig_city)
-            
-            # Ajout de la métrique moyenne d'année de création
-            st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
+   
 
 # Main content area
 if secteur_choisi:
@@ -235,6 +196,47 @@ if secteur_choisi:
             )
 
             st.pydeck_chart(deck)
+
+         # Graphiques dans la sidebar
+        if secteur_choisi:
+            entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie, secteur_choisi)
+    
+            if not entreprises.empty:
+                # Distribution par taille d'entreprise
+                st.subheader("Distribution des entreprises par taille")
+                size_distribution = entreprises['SIZE'].value_counts()
+                fig_size = px.pie(
+                    values=size_distribution.values, 
+                    names=size_distribution.index, 
+                    title="Répartition des entreprises par nombre d'employés"
+                )
+                st.plotly_chart(fig_size)
+                
+                # Création d'entreprises par année
+                st.subheader("Création d'entreprises par année")
+                creation_distribution = entreprises['CREATION'].value_counts().sort_index()
+                fig_creation = px.bar(
+                    x=creation_distribution.index, 
+                    y=creation_distribution.values, 
+                    labels={'x':'Année', 'y':'Nombre d\'entreprises'},
+                    title="Nombre d'entreprises par année de création"
+                )
+                st.plotly_chart(fig_creation)
+                
+                # Répartition par ville
+                st.subheader("Répartition des entreprises par ville")
+                city_counts = entreprises['VILLE'].value_counts().head(10)
+                fig_city = px.bar(
+                    x=city_counts.index, 
+                    y=city_counts.values, 
+                    labels={'x':'Ville', 'y':'Nombre d\'entreprises'},
+                    title="Top 10 des villes par nombre d'entreprises"
+                )
+                fig_city.update_xaxes(tickangle=45)
+                st.plotly_chart(fig_city)
+                
+                # Ajout de la métrique moyenne d'année de création
+                st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
         else:
             st.write("Aucune donnée de localisation disponible pour affichage sur la carte.")
     else:
