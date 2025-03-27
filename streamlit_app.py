@@ -4,7 +4,8 @@ import io
 import snowflake.connector
 from snowflake.snowpark.session import Session
 import pandas as pd
-import plotly 
+import plotly.express as px
+import plotly.graph_objects as go 
 
 # Connexion à Snowflake
 def get_snowflake_session():
@@ -194,15 +195,41 @@ if secteur_choisi:
             )
 
             st.pydeck_chart(deck)
+            st.subheader("Distribution des entreprises par taille")
+            size_distribution = entreprises['SIZE'].value_counts()
+            fig_size = px.pie(
+                values=size_distribution.values, 
+                names=size_distribution.index, 
+                title="Répartition des entreprises par nombre d'employés"
+            )
+            st.plotly_chart(fig_size)
+            
+            # 2. Répartition par année de création
+            st.subheader("Création d'entreprises par année")
+            creation_distribution = entreprises['CREATION'].value_counts().sort_index()
+            fig_creation = px.bar(
+                x=creation_distribution.index, 
+                y=creation_distribution.values, 
+                labels={'x':'Année', 'y':'Nombre d\'entreprises'},
+                title="Nombre d'entreprises par année de création"
+            )
+            st.plotly_chart(fig_creation)
+            
+            # 3. Distribution par ville
+            st.subheader("Répartition des entreprises par ville")
+            city_counts = entreprises['VILLE'].value_counts().head(10)
+            fig_city = px.bar(
+                x=city_counts.index, 
+                y=city_counts.values, 
+                labels={'x':'Ville', 'y':'Nombre d\'entreprises'},
+                title="Top 10 des villes par nombre d'entreprises"
+            )
+            fig_city.update_xaxes(tickangle=45)
+            st.plotly_chart(fig_city)
+
         else:
             st.write("Aucune donnée de localisation disponible pour affichage sur la carte.")
     else:
         st.write("Aucune entreprise ne correspond aux critères sélectionnés.")
-# Dashboard de métriques
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric(label="Nombre total d'entreprises", value=len(entreprises))
-with col2:
-    st.metric(label="Moyenne d'employés", value=round(entreprises['SIZE'].mean(), 2))
-with col3:
+
     st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
