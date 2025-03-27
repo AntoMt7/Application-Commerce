@@ -4,6 +4,7 @@ import io
 import snowflake.connector
 from snowflake.snowpark.session import Session
 import pandas as pd
+import plotly 
 
 # Connexion à Snowflake
 def get_snowflake_session():
@@ -197,3 +198,11 @@ if secteur_choisi:
             st.write("Aucune donnée de localisation disponible pour affichage sur la carte.")
     else:
         st.write("Aucune entreprise ne correspond aux critères sélectionnés.")
+# Dashboard de métriques
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric(label="Nombre total d'entreprises", value=len(entreprises))
+with col2:
+    st.metric(label="Moyenne d'employés", value=round(entreprises['SIZE'].mean(), 2))
+with col3:
+    st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
