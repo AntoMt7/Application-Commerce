@@ -138,11 +138,11 @@ with st.sidebar:
         existing_industries = ["Aucune industrie"] + existing_industries
         industrie_choisie = st.selectbox("Sélectionner une industrie", existing_industries)
     
-    # Affichage des résultats si tous les critères sont remplis
-    if secteur_choisi:
+# Affichage des résultats si tous les critères sont remplis
+if secteur_choisi:
         entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie, secteur_choisi)
     
-        if not entreprises.empty:
+    if not entreprises.empty:
             st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, secteur d'activité '{secteur_choisi}' :")
             
             # Afficher le tableau avec les nouvelles colonnes, et permettre l'édition de la colonne COMMENTAIRES
