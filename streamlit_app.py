@@ -199,6 +199,8 @@ if secteur_choisi:
             st.pydeck_chart(deck)
 
             # Graphiques après la carte
+             # Ajout de la métrique moyenne d'année de création
+            st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
             st.header("Analyses et Statistiques")
             col1, col2 = st.columns(2)
             # Distribution par taille d'entreprise
@@ -210,10 +212,8 @@ if secteur_choisi:
                     names=size_distribution.index, 
                     title="Répartition des entreprises par nombre d'employés"
                 )
-                st.plotly_chart(fig_size)
-            with col2: 
-                # Ajout de la métrique moyenne d'année de création
-                st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
+                st.plotly_chart(fig_size) 
+               
             
             # Création d'entreprises par année
             with col1: 
