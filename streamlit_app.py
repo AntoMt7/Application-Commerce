@@ -104,132 +104,133 @@ def to_csv(df):
     return csv
 
 # Interface utilisateur
-st.title("Application commerciale")
-session = get_snowflake_session()
-
-# Sélection de la région
-existing_regions = get_region()
-region_choisie = st.selectbox("Sélectionner une région", existing_regions)
-
-# Mise à jour dynamique des départements en fonction de la région
-departement_choisie = None
-if region_choisie:
-    departements = get_departement(region_choisie)
-    departement_choisie = st.selectbox("Sélectionner le département souhaité", departements)
-
-# Sélection multiple de la taille de l'entreprise
-size_choisies = []
-if departement_choisie:
-    sizes = get_size()
-    size_choisies = st.multiselect("Sélectionner une ou plusieurs tailles d'entreprise", sizes)
-
-# Sélection du secteur d'activité avec filtrage dynamique
-secteur_choisi = None
-if size_choisies:
-    existing_secteurs = get_industrie(region_choisie, size_choisies, departement_choisie)
-    secteur_choisi = st.selectbox("Sélectionner un secteur d'activité", existing_secteurs)
-
-# Sélection dynamique de l'industrie en fonction du secteur choisi
-industrie_choisie = None
-if secteur_choisi:
-    existing_industries = get_industries_for_secteur(region_choisie, size_choisies, departement_choisie, secteur_choisi)
-    # Ajouter une option pour "Aucune industrie" pour réinitialiser le filtre
-    existing_industries = ["Aucune industrie"] + existing_industries
-    industrie_choisie = st.selectbox("Sélectionner une industrie", existing_industries)
-
-# Affichage des résultats si tous les critères sont remplis
-if secteur_choisi:
-    entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie, secteur_choisi)
-
-    if not entreprises.empty:
-        st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, secteur d'activité '{secteur_choisi}' :")
-        
-        # Afficher le tableau avec les nouvelles colonnes, et permettre l'édition de la colonne COMMENTAIRES
-        edited_df = st.data_editor(
-            entreprises[["NOM", "CREATION", "VILLE", "SIZE", "SITE_INTERNET", "LINKEDIN_URL", "COMMENTAIRES"]],
-            use_container_width=True,  # Étire sur toute la largeur
-            height=600,  # Ajuste la hauteur du tableau
-            column_config={
-                "COMMENTAIRES": st.column_config.TextColumn("Commentaires")  # Rendre la colonne des commentaires éditable
-            }
-        )
-
-        # Sauvegarde des commentaires modifiés
-        if not entreprises["COMMENTAIRES"].equals(edited_df["COMMENTAIRES"]):  # Si seulement les commentaires ont été modifiés
-            for index, row in edited_df.iterrows():
-                if row["COMMENTAIRES"] != entreprises.at[index, "COMMENTAIRES"]:
-                    save_commentaire(row["NOM"], row["COMMENTAIRES"])
-            st.success("Les commentaires ont été mis à jour.")
-
-        # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
-        csv_data = to_csv(entreprises)
-        st.download_button(
-            label="Télécharger en CSV",
-            data=csv_data,
-            file_name="entreprises.csv",
-            mime="text/csv"
-        )
-
-        # Vérifier si la carte peut être affichée
-        if not map_data.empty:
-            layer = pdk.Layer(
-                "ScatterplotLayer",
-                data=map_data,
-                get_position=["LON", "LAT"],
-                get_color=[255, 0, 0, 140],  # Rouge semi-transparent
-                get_radius=500,
-                pickable=True,
-            )
-
-            view_state = pdk.ViewState(
-                latitude=map_data["LAT"].mean(),
-                longitude=map_data["LON"].mean(),
-                zoom=10
-            )
-
-            deck = pdk.Deck(
-                layers=[layer],
-                initial_view_state=view_state,
-                map_style="mapbox://styles/mapbox/light-v9",  # Fond de carte clair
-                tooltip={"html": "<b>Ville:</b> {VILLE}<br><b>Entreprises:</b> {ENTREPRISES}"}
-            )
-
-            st.pydeck_chart(deck)
-            st.subheader("Distribution des entreprises par taille")
-            size_distribution = entreprises['SIZE'].value_counts()
-            fig_size = px.pie(
-                values=size_distribution.values, 
-                names=size_distribution.index, 
-                title="Répartition des entreprises par nombre d'employés"
-            )
-            st.plotly_chart(fig_size)
+with st.sidebar:
+    st.title("Application commerciale")
+    session = get_snowflake_session()
+    
+    # Sélection de la région
+    existing_regions = get_region()
+    region_choisie = st.selectbox("Sélectionner une région", existing_regions)
+    
+    # Mise à jour dynamique des départements en fonction de la région
+    departement_choisie = None
+    if region_choisie:
+        departements = get_departement(region_choisie)
+        departement_choisie = st.selectbox("Sélectionner le département souhaité", departements)
+    
+    # Sélection multiple de la taille de l'entreprise
+    size_choisies = []
+    if departement_choisie:
+        sizes = get_size()
+        size_choisies = st.multiselect("Sélectionner une ou plusieurs tailles d'entreprise", sizes)
+    
+    # Sélection du secteur d'activité avec filtrage dynamique
+    secteur_choisi = None
+    if size_choisies:
+        existing_secteurs = get_industrie(region_choisie, size_choisies, departement_choisie)
+        secteur_choisi = st.selectbox("Sélectionner un secteur d'activité", existing_secteurs)
+    
+    # Sélection dynamique de l'industrie en fonction du secteur choisi
+    industrie_choisie = None
+    if secteur_choisi:
+        existing_industries = get_industries_for_secteur(region_choisie, size_choisies, departement_choisie, secteur_choisi)
+        # Ajouter une option pour "Aucune industrie" pour réinitialiser le filtre
+        existing_industries = ["Aucune industrie"] + existing_industries
+        industrie_choisie = st.selectbox("Sélectionner une industrie", existing_industries)
+    
+    # Affichage des résultats si tous les critères sont remplis
+    if secteur_choisi:
+        entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie, secteur_choisi)
+    
+        if not entreprises.empty:
+            st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, secteur d'activité '{secteur_choisi}' :")
             
-            # 2. Répartition par année de création
-            st.subheader("Création d'entreprises par année")
-            creation_distribution = entreprises['CREATION'].value_counts().sort_index()
-            fig_creation = px.bar(
-                x=creation_distribution.index, 
-                y=creation_distribution.values, 
-                labels={'x':'Année', 'y':'Nombre d\'entreprises'},
-                title="Nombre d'entreprises par année de création"
+            # Afficher le tableau avec les nouvelles colonnes, et permettre l'édition de la colonne COMMENTAIRES
+            edited_df = st.data_editor(
+                entreprises[["NOM", "CREATION", "VILLE", "SIZE", "SITE_INTERNET", "LINKEDIN_URL", "COMMENTAIRES"]],
+                use_container_width=True,  # Étire sur toute la largeur
+                height=600,  # Ajuste la hauteur du tableau
+                column_config={
+                    "COMMENTAIRES": st.column_config.TextColumn("Commentaires")  # Rendre la colonne des commentaires éditable
+                }
             )
-            st.plotly_chart(fig_creation)
-            
-            # 3. Distribution par ville
-            st.subheader("Répartition des entreprises par ville")
-            city_counts = entreprises['VILLE'].value_counts().head(10)
-            fig_city = px.bar(
-                x=city_counts.index, 
-                y=city_counts.values, 
-                labels={'x':'Ville', 'y':'Nombre d\'entreprises'},
-                title="Top 10 des villes par nombre d'entreprises"
+    
+            # Sauvegarde des commentaires modifiés
+            if not entreprises["COMMENTAIRES"].equals(edited_df["COMMENTAIRES"]):  # Si seulement les commentaires ont été modifiés
+                for index, row in edited_df.iterrows():
+                    if row["COMMENTAIRES"] != entreprises.at[index, "COMMENTAIRES"]:
+                        save_commentaire(row["NOM"], row["COMMENTAIRES"])
+                st.success("Les commentaires ont été mis à jour.")
+    
+            # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
+            csv_data = to_csv(entreprises)
+            st.download_button(
+                label="Télécharger en CSV",
+                data=csv_data,
+                file_name="entreprises.csv",
+                mime="text/csv"
             )
-            fig_city.update_xaxes(tickangle=45)
-            st.plotly_chart(fig_city)
-
+    
+            # Vérifier si la carte peut être affichée
+            if not map_data.empty:
+                layer = pdk.Layer(
+                    "ScatterplotLayer",
+                    data=map_data,
+                    get_position=["LON", "LAT"],
+                    get_color=[255, 0, 0, 140],  # Rouge semi-transparent
+                    get_radius=500,
+                    pickable=True,
+                )
+    
+                view_state = pdk.ViewState(
+                    latitude=map_data["LAT"].mean(),
+                    longitude=map_data["LON"].mean(),
+                    zoom=10
+                )
+    
+                deck = pdk.Deck(
+                    layers=[layer],
+                    initial_view_state=view_state,
+                    map_style="mapbox://styles/mapbox/light-v9",  # Fond de carte clair
+                    tooltip={"html": "<b>Ville:</b> {VILLE}<br><b>Entreprises:</b> {ENTREPRISES}"}
+                )
+    
+                st.pydeck_chart(deck)
+                st.subheader("Distribution des entreprises par taille")
+                size_distribution = entreprises['SIZE'].value_counts()
+                fig_size = px.pie(
+                    values=size_distribution.values, 
+                    names=size_distribution.index, 
+                    title="Répartition des entreprises par nombre d'employés"
+                )
+                st.plotly_chart(fig_size)
+                
+                # 2. Répartition par année de création
+                st.subheader("Création d'entreprises par année")
+                creation_distribution = entreprises['CREATION'].value_counts().sort_index()
+                fig_creation = px.bar(
+                    x=creation_distribution.index, 
+                    y=creation_distribution.values, 
+                    labels={'x':'Année', 'y':'Nombre d\'entreprises'},
+                    title="Nombre d'entreprises par année de création"
+                )
+                st.plotly_chart(fig_creation)
+                
+                # 3. Distribution par ville
+                st.subheader("Répartition des entreprises par ville")
+                city_counts = entreprises['VILLE'].value_counts().head(10)
+                fig_city = px.bar(
+                    x=city_counts.index, 
+                    y=city_counts.values, 
+                    labels={'x':'Ville', 'y':'Nombre d\'entreprises'},
+                    title="Top 10 des villes par nombre d'entreprises"
+                )
+                fig_city.update_xaxes(tickangle=45)
+                st.plotly_chart(fig_city)
+    
+            else:
+                st.write("Aucune donnée de localisation disponible pour affichage sur la carte.")
         else:
-            st.write("Aucune donnée de localisation disponible pour affichage sur la carte.")
-    else:
-        st.write("Aucune entreprise ne correspond aux critères sélectionnés.")
-
-    st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
+            st.write("Aucune entreprise ne correspond aux critères sélectionnés.")
+    
+        st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
