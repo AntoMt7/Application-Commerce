@@ -200,17 +200,20 @@ if secteur_choisi:
 
             # Graphiques après la carte
             st.header("Analyses et Statistiques")
-
+            col1, col2 = st.columns(2)
             # Distribution par taille d'entreprise
-            st.subheader("Distribution des entreprises par taille")
-            size_distribution = entreprises['SIZE'].value_counts()
-            fig_size = px.pie(
-                values=size_distribution.values, 
-                names=size_distribution.index, 
-                title="Répartition des entreprises par nombre d'employés"
-            )
-            st.plotly_chart(fig_size)
-            
+            with col1:
+                st.subheader("Distribution des entreprises par taille")
+                size_distribution = entreprises['SIZE'].value_counts()
+                fig_size = px.pie(
+                    values=size_distribution.values, 
+                    names=size_distribution.index, 
+                    title="Répartition des entreprises par nombre d'employés"
+                )
+                st.plotly_chart(fig_size)
+            with col2: 
+                # Ajout de la métrique moyenne d'année de création
+                st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
             # Création d'entreprises par année
             st.subheader("Création d'entreprises par année")
             creation_distribution = entreprises['CREATION'].value_counts().sort_index()
@@ -234,8 +237,7 @@ if secteur_choisi:
             fig_city.update_xaxes(tickangle=45)
             st.plotly_chart(fig_city)
             
-            # Ajout de la métrique moyenne d'année de création
-            st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
+        
 
         else:
             st.write("Aucune donnée de localisation disponible pour affichage sur la carte.")
