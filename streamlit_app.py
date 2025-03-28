@@ -198,7 +198,7 @@ if secteur_choisi:
 
             st.pydeck_chart(deck)
 
-            st.button("Graphiques"
+            st.button("Graphiques")
                       if st.button: 
                         st.header("Analyses et Statistiques")
                         # Graphiques après la carte
