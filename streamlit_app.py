@@ -32,7 +32,7 @@ def get_region():
     return [row["REGION"] for row in result]
 
 def get_size():
-    query = "SELECT DISTINCT SIZE FROM appli_commerce.public.commerce ORDER BY SIZE DESC"
+    query = "SELECT DISTINCT SIZE FROM dataset ORDER BY TRY_CAST(SPLIT_PART(SIZE, '-', 1) AS INTEGER);"
     result = session.sql(query).collect()
     return [row["SIZE"] for row in result]
 
