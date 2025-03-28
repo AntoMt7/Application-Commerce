@@ -198,36 +198,37 @@ if secteur_choisi:
 
             st.pydeck_chart(deck)
 
-            
-            st.header("Analyses et Statistiques")
-            # Graphiques après la carte
-             # Ajout de la métrique moyenne d'année de création
-            st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
-            col1, col2 = st.columns(2)
-            # Distribution par taille d'entreprise
-            with col1:
-                st.subheader("Distribution des entreprises par taille")
-                size_distribution = entreprises['SIZE'].value_counts()
-                fig_size = px.pie(
-                    values=size_distribution.values, 
-                    names=size_distribution.index, 
-                    title="Répartition des entreprises par nombre d'employés"
-                )
-                st.plotly_chart(fig_size) 
-            
-            # Répartition par ville
-            with col2: 
-                st.subheader("Répartition des entreprises par ville")
-                city_counts = entreprises['VILLE'].value_counts().head(10)
-                fig_city = px.bar(
-                    x=city_counts.index, 
-                    y=city_counts.values, 
-                    labels={'x':'Ville', 'y':'Nombre d\'entreprises'},
-                    title="Top 10 des villes par nombre d'entreprises"
-                )
-                fig_city.update_xaxes(tickangle=45)
-                st.plotly_chart(fig_city)
-            
+            st.button("Graphiques"
+                      if st.button: 
+                        st.header("Analyses et Statistiques")
+                        # Graphiques après la carte
+                         # Ajout de la métrique moyenne d'année de création
+                        st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
+                        col1, col2 = st.columns(2)
+                        # Distribution par taille d'entreprise
+                        with col1:
+                            st.subheader("Distribution des entreprises par taille")
+                            size_distribution = entreprises['SIZE'].value_counts()
+                            fig_size = px.pie(
+                                values=size_distribution.values, 
+                                names=size_distribution.index, 
+                                title="Répartition des entreprises par nombre d'employés"
+                            )
+                            st.plotly_chart(fig_size) 
+                        
+                        # Répartition par ville
+                        with col2: 
+                            st.subheader("Répartition des entreprises par ville")
+                            city_counts = entreprises['VILLE'].value_counts().head(10)
+                            fig_city = px.bar(
+                                x=city_counts.index, 
+                                y=city_counts.values, 
+                                labels={'x':'Ville', 'y':'Nombre d\'entreprises'},
+                                title="Top 10 des villes par nombre d'entreprises"
+                            )
+                            fig_city.update_xaxes(tickangle=45)
+                            st.plotly_chart(fig_city)
+                
         else:
             st.write("Aucune donnée de localisation disponible pour affichage sur la carte.")
     else:
