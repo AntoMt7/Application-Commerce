@@ -199,7 +199,7 @@ if secteur_choisi:
             st.pydeck_chart(deck)
 
             st.button("Graphiques")
-            if st.button(): 
+            if st.button("Graphiques"): 
                         st.header("Analyses et Statistiques")
                         # Graphiques après la carte
                          # Ajout de la métrique moyenne d'année de création
