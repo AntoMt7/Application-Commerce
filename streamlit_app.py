@@ -198,10 +198,11 @@ if secteur_choisi:
 
             st.pydeck_chart(deck)
 
+            
+            st.header("Analyses et Statistiques")
             # Graphiques après la carte
              # Ajout de la métrique moyenne d'année de création
             st.metric(label="Année moyenne de création", value=round(entreprises['CREATION'].mean(), 2))
-            st.header("Analyses et Statistiques")
             col1, col2 = st.columns(2)
             # Distribution par taille d'entreprise
             with col1:
@@ -213,19 +214,6 @@ if secteur_choisi:
                     title="Répartition des entreprises par nombre d'employés"
                 )
                 st.plotly_chart(fig_size) 
-               
-            
-            # Création d'entreprises par année
-            with col1: 
-                st.subheader("Création d'entreprises par année")
-                creation_distribution = entreprises['CREATION'].value_counts().sort_index()
-                fig_creation = px.bar(
-                    x=creation_distribution.index, 
-                    y=creation_distribution.values, 
-                    labels={'x':'Année', 'y':'Nombre d\'entreprises'},
-                    title="Nombre d'entreprises par année de création"
-                )
-                st.plotly_chart(fig_creation)
             
             # Répartition par ville
             with col2: 
@@ -240,8 +228,6 @@ if secteur_choisi:
                 fig_city.update_xaxes(tickangle=45)
                 st.plotly_chart(fig_city)
             
-        
-
         else:
             st.write("Aucune donnée de localisation disponible pour affichage sur la carte.")
     else:
