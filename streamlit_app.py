@@ -106,32 +106,34 @@ def to_csv(df):
 # Interface utilisateur
 with st.sidebar:
     st.title("Prospection commerciale")
+    
+    # Connexion à la session Snowflake
     session = get_snowflake_session()
-    
-        # Sélection du secteur d'activité avec filtrage dynamique
+
+    # Sélection du secteur d'activité avec filtrage dynamique
     secteur_choisi = None
-        existing_secteurs = get_industrie(region_choisie, size_choisies, departement_choisie)
-        secteur_choisi = st.multiselect("Sélectionner un/des secteur(s) d'activité(s)", existing_secteurs)
-    
+    existing_secteurs = get_industrie(region_choisie, size_choisies, departement_choisie)
+    secteur_choisi = st.multiselect("Sélectionner un/des secteur(s) d'activité(s)", existing_secteurs)
+
     # Sélection dynamique de l'industrie en fonction du secteur choisi
     industrie_choisie = None
     if secteur_choisi:
         existing_industries = get_industries_for_secteur(region_choisie, size_choisies, departement_choisie, secteur_choisi)
-        # Ajouter une option pour "Aucune industrie" pour réinitialiser le filtre
-        existing_industries = ["Aucune industrie"] + existing_industries
+        existing_industries = ["Aucune industrie"] + existing_industries  # Option pour réinitialiser le filtre
         industrie_choisie = st.multiselect("Sélectionner une industrie", existing_industries)
-        
+
     # Sélection de la région
+    region_choisie = None
     if secteur_choisi:
         existing_regions = get_region()
         region_choisie = st.multiselect("Sélectionner une ou plusieurs région(s)", existing_regions)
-    
+
     # Mise à jour dynamique des départements en fonction de la région
     departement_choisie = None
     if secteur_choisi:
         departements = get_departement(region_choisie)
         departement_choisie = st.multiselect("Sélectionner le/les département(s) souhaité(s)", departements)
-    
+
     # Sélection multiple de la taille de l'entreprise
     size_choisies = []
     if secteur_choisi:
