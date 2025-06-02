@@ -26,14 +26,16 @@ def save_commentaire(nom, commentaire):
     session.sql(query, [commentaire, nom]).collect()
 
 # Fonctions pour récupérer les données
-def get_region():
-    query = "SELECT DISTINCT REGION FROM appli_commerce.public.commerce ORDER BY REGION ASC"
-    result = session.sql(query).collect()
+def get_regions_from_secteurs(secteurs):
+    placeholders = ",".join(["?"] * len(secteurs))
+    query = f"SELECT DISTINCT REGION FROM appli_commerce.public.commerce WHERE SECTEUR_D_ACTIVITE IN ({placeholders}) ORDER BY REGION"
+    result = session.sql(query, secteurs).collect()
     return [row["REGION"] for row in result]
 
-def get_size():
-    query = "SELECT DISTINCT SIZE FROM appli_commerce.public.commerce ORDER BY TRY_CAST(SPLIT_PART(SIZE, '-', 1) AS INTEGER);"
-    result = session.sql(query).collect()
+def get_size_from_secteurs(secteurs):
+    placeholders = ",".join(["?"] * len(secteurs))
+    query = f"SELECT DISTINCT SIZE FROM appli_commerce.public.commerce WHERE SECTEUR_D_ACTIVITE IN ({placeholders}) ORDER BY TRY_CAST(SPLIT_PART(SIZE, '-', 1) AS INTEGER)"
+    result = session.sql(query, secteurs).collect()
     return [row["SIZE"] for row in result]
 
 def get_departement(region_choisie):
@@ -41,55 +43,71 @@ def get_departement(region_choisie):
     result = session.sql(query, [region_choisie]).collect()
     return [row["DEPARTEMENT"] for row in result]
 
-def get_industrie(region_choisie, size_choisies, departement_choisie):
-    query = f"""
-    SELECT DISTINCT SECTEUR_D_ACTIVITE 
-    FROM appli_commerce.public.commerce 
-    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))})
-    ORDER BY SECTEUR_D_ACTIVITE ASC
-    """
-    result = session.sql(query, [region_choisie, departement_choisie] + size_choisies).collect()
+def get_all_secteurs():
+    query = "SELECT DISTINCT SECTEUR_D_ACTIVITE FROM appli_commerce.public.commerce ORDER BY SECTEUR_D_ACTIVITE"
+    result = session.sql(query).collect()
     return [row["SECTEUR_D_ACTIVITE"] for row in result]
 
-def get_industries_for_secteur(region_choisie, size_choisies, departement_choisie, secteur_choisi):
-    query = f"""
-    SELECT DISTINCT INDUSTRIE 
-    FROM appli_commerce.public.commerce 
-    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))}) AND SECTEUR_D_ACTIVITE = ?
-    ORDER BY INDUSTRIE ASC
-    """
-    result = session.sql(query, [region_choisie, departement_choisie] + size_choisies + [secteur_choisi]).collect()
+def get_industries_from_secteurs(secteurs):
+    placeholders = ",".join(["?"] * len(secteurs))
+    query = f"SELECT DISTINCT INDUSTRIE FROM appli_commerce.public.commerce WHERE SECTEUR_D_ACTIVITE IN ({placeholders}) ORDER BY INDUSTRIE"
+    result = session.sql(query, secteurs).collect()
     return [row["INDUSTRIE"] for row in result]
 
-def get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie=None, secteur_choisi=None):
-    query = f"""
-    SELECT NOM, CREATION, VILLE, SITE_INTERNET, LINKEDIN_URL, SIZE, INDUSTRIE, COMMENTAIRES, LON, LAT
-    FROM appli_commerce.public.commerce
-    WHERE REGION = ? AND DEPARTEMENT = ? AND SIZE IN ({','.join(['?'] * len(size_choisies))})
+
+def get_entreprises(
+    secteurs=None,
+    industries=None,
+    regions=None,
+    departements=None,
+    tailles=None
+):
+    query = """
+        SELECT NOM, CREATION, VILLE, SITE_INTERNET, LINKEDIN_URL, SIZE, INDUSTRIE,
+               COMMENTAIRES, LON, LAT
+        FROM appli_commerce.public.commerce
+        WHERE 1=1
     """
-    
-    params = [region_choisie, departement_choisie] + size_choisies
-    
-    # Ajouter le filtre sur le secteur d'activité si sélectionné
-    if secteur_choisi:
-        query += " AND SECTEUR_D_ACTIVITE = ?"
-        params.append(secteur_choisi)
-    
-    # Ajouter le filtre sur l'industrie si sélectionnée
-    if industrie_choisie and industrie_choisie != "Aucune industrie":
-        query += " AND INDUSTRIE = ?"
-        params.append(industrie_choisie)
-    
+    params = []
+
+    # Ajout dynamique des clauses WHERE
+    if secteurs:
+        placeholders = ",".join(["?"] * len(secteurs))
+        query += f" AND SECTEUR_D_ACTIVITE IN ({placeholders})"
+        params.extend(secteurs)
+
+    if industries and "Aucune industrie" not in industries:
+        placeholders = ",".join(["?"] * len(industries))
+        query += f" AND INDUSTRIE IN ({placeholders})"
+        params.extend(industries)
+
+    if regions:
+        placeholders = ",".join(["?"] * len(regions))
+        query += f" AND REGION IN ({placeholders})"
+        params.extend(regions)
+
+    if departements:
+        placeholders = ",".join(["?"] * len(departements))
+        query += f" AND DEPARTEMENT IN ({placeholders})"
+        params.extend(departements)
+
+    if tailles:
+        placeholders = ",".join(["?"] * len(tailles))
+        query += f" AND SIZE IN ({placeholders})"
+        params.extend(tailles)
+
+    # Exécuter la requête
     result = session.sql(query, params).to_pandas()
 
-    # Supprime les entreprises sans coordonnées
+    # Supprimer les entreprises sans coordonnées
     result = result.dropna(subset=["LAT", "LON"])
 
-    # Concaténer les noms des entreprises par ville
+    # Grouper les entreprises par ville
     grouped_data = result.groupby(["VILLE", "LAT", "LON"]).apply(
         lambda x: ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
     ).reset_index(name="ENTREPRISES")
 
+    # Retourner les données
     return result.drop(columns=["LON", "LAT"]), grouped_data
 
 # Fonction pour récupérer les années disponibles
@@ -106,40 +124,38 @@ def to_csv(df):
 # Interface utilisateur
 with st.sidebar:
     st.title("Prospection commerciale")
-    
-    # Connexion à la session Snowflake
+
+    # Connexion
     session = get_snowflake_session()
 
-    # Sélection du secteur d'activité avec filtrage dynamique
-    secteur_choisi = None
-    existing_secteurs = get_industrie(region_choisie, size_choisies, departement_choisie)
-    secteur_choisi = st.multiselect("Sélectionner un/des secteur(s) d'activité(s)", existing_secteurs)
+    # 1. Secteur d’activité
+    secteurs = get_all_secteurs()  # Une nouvelle fonction à créer (voir plus bas)
+    secteur_choisi = st.multiselect("Sélectionner un/des secteur(s) d'activité(s)", secteurs)
 
-    # Sélection dynamique de l'industrie en fonction du secteur choisi
-    industrie_choisie = None
+    # 2. Industrie
+    industrie_choisie = []
     if secteur_choisi:
-        existing_industries = get_industries_for_secteur(region_choisie, size_choisies, departement_choisie, secteur_choisi)
-        existing_industries = ["Aucune industrie"] + existing_industries  # Option pour réinitialiser le filtre
-        industrie_choisie = st.multiselect("Sélectionner une industrie", existing_industries)
+        industries = get_industries_from_secteurs(secteur_choisi)
+        industries = ["Aucune industrie"] + industries
+        industrie_choisie = st.multiselect("Sélectionner une ou plusieurs industrie(s)", industries)
 
-    # Sélection de la région
-    region_choisie = None
+    # 3. Région
+    region_choisie = []
     if secteur_choisi:
-        existing_regions = get_region()
-        region_choisie = st.multiselect("Sélectionner une ou plusieurs région(s)", existing_regions)
+        regions = get_regions_from_secteurs(secteur_choisi)
+        region_choisie = st.multiselect("Sélectionner une ou plusieurs région(s)", regions)
 
-    # Mise à jour dynamique des départements en fonction de la région
-    departement_choisie = None
-    if secteur_choisi:
+    # 4. Département
+    departement_choisie = []
+    if region_choisie:
         departements = get_departement(region_choisie)
-        departement_choisie = st.multiselect("Sélectionner le/les département(s) souhaité(s)", departements)
+        departement_choisie = st.multiselect("Sélectionner un ou plusieurs département(s)", departements)
 
-    # Sélection multiple de la taille de l'entreprise
+    # 5. Taille
     size_choisies = []
     if secteur_choisi:
-        sizes = get_size()
+        sizes = get_size_from_secteurs(secteur_choisi)
         size_choisies = st.multiselect("Sélectionner une ou plusieurs tailles d'entreprise", sizes)
-
 
 # Main content area
 # Création des onglets
