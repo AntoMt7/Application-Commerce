@@ -111,7 +111,7 @@ def get_entreprises(
     return result.drop(columns=["LON", "LAT"]), grouped_data
 
 # Fonction pour récupérer les années disponibles
-def get_years():
+def get_years(session):
     query = "SELECT DISTINCT CREATION FROM appli_commerce.public.commerce ORDER BY CREATION ASC"
     result = session.sql(query).collect()
     return [row["CREATION"] for row in result]
