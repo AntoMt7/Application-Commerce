@@ -104,8 +104,9 @@ def get_entreprises(
 
     # Grouper les entreprises par ville
     grouped_data = result.groupby(["VILLE", "LAT", "LON"]).apply(
-        lambda x: ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
-    ).reset_index(name="ENTREPRISES")
+    lambda x: ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())).reset_index()
+    grouped_data.columns = ["VILLE", "LAT", "LON", "ENTREPRISES"]
+
 
     # Retourner les données
     return result.drop(columns=["LON", "LAT"]), grouped_data
