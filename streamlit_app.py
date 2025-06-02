@@ -167,7 +167,12 @@ with st.sidebar:
 #tab1, tab2 = st.tabs(["Carte & Données", "Analyses & Graphiques"])
 #with tab1: 
 if secteur_choisi:
-    entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie, secteur_choisi)
+    entreprises, map_data = get_entreprises(
+        secteurs=secteur_choisi,
+        industries=industrie_choisie,
+        regions=region_choisie,
+        departements=departement_choisie,
+        tailles=size_choisies)
 
     if not entreprises.empty:
         st.write(
