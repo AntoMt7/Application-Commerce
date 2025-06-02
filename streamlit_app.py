@@ -142,10 +142,10 @@ with st.sidebar:
 # Création des onglets
 #tab1, tab2 = st.tabs(["Carte & Données", "Analyses & Graphiques"])
 #with tab1: 
-    if secteur_choisi:
+if secteur_choisi:
         entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie, secteur_choisi)
     
-        if not entreprises.empty:
+    if not entreprises.empty:
             st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, secteur d'activité '{secteur_choisi}' :")
             
             # Afficher le tableau avec les nouvelles colonnes, et permettre l'édition de la colonne COMMENTAIRES
@@ -159,7 +159,7 @@ with st.sidebar:
             )
     
             # Sauvegarde des commentaires modifiés
-            if not entreprises["COMMENTAIRES"].equals(edited_df["COMMENTAIRES"]):  # Si seulement les commentaires ont été modifiés
+        if not entreprises["COMMENTAIRES"].equals(edited_df["COMMENTAIRES"]):  # Si seulement les commentaires ont été modifiés
                 for index, row in edited_df.iterrows():
                     if row["COMMENTAIRES"] != entreprises.at[index, "COMMENTAIRES"]:
                         save_commentaire(row["NOM"], row["COMMENTAIRES"])
@@ -175,7 +175,7 @@ with st.sidebar:
             )
     
             # Vérifier si la carte peut être affichée
-            if not map_data.empty:
+        if not map_data.empty:
                 st.subheader("Localisation des Entreprises")
                 layer = pdk.Layer(
                     "ScatterplotLayer",
