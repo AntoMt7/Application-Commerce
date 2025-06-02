@@ -103,9 +103,12 @@ def get_entreprises(
     result = result.dropna(subset=["LAT", "LON"])
 
     # Grouper les entreprises par ville
-    grouped_data = result.groupby(["VILLE", "LAT", "LON"]).apply(
-    lambda x: ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())).reset_index(drop=False)
-    grouped_data = grouped_data.rename(columns={0: "ENTREPRISES"})
+    # Grouper les entreprises par ville et concaténer les noms + tailles
+    grouped_data = (
+    result.groupby(["VILLE", "LAT", "LON"], group_keys=False).apply(lambda x: pd.Series({
+        "ENTREPRISES": ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
+    }))
+    .reset_index())
 
 
 
