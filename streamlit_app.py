@@ -105,30 +105,13 @@ def to_csv(df):
 
 # Interface utilisateur
 with st.sidebar:
-    st.title("Application commerciale")
+    st.title("Prospection commerciale")
     session = get_snowflake_session()
     
-    # Sélection de la région
-    existing_regions = get_region()
-    region_choisie = st.selectbox("Sélectionner une région", existing_regions)
-    
-    # Mise à jour dynamique des départements en fonction de la région
-    departement_choisie = None
-    if region_choisie:
-        departements = get_departement(region_choisie)
-        departement_choisie = st.selectbox("Sélectionner le département souhaité", departements)
-    
-    # Sélection multiple de la taille de l'entreprise
-    size_choisies = []
-    if departement_choisie:
-        sizes = get_size()
-        size_choisies = st.multiselect("Sélectionner une ou plusieurs tailles d'entreprise", sizes)
-    
-    # Sélection du secteur d'activité avec filtrage dynamique
+        # Sélection du secteur d'activité avec filtrage dynamique
     secteur_choisi = None
-    if size_choisies:
         existing_secteurs = get_industrie(region_choisie, size_choisies, departement_choisie)
-        secteur_choisi = st.selectbox("Sélectionner un secteur d'activité", existing_secteurs)
+        secteur_choisi = st.multiselect("Sélectionner un/des secteur(s) d'activité(s)", existing_secteurs)
     
     # Sélection dynamique de l'industrie en fonction du secteur choisi
     industrie_choisie = None
@@ -136,7 +119,25 @@ with st.sidebar:
         existing_industries = get_industries_for_secteur(region_choisie, size_choisies, departement_choisie, secteur_choisi)
         # Ajouter une option pour "Aucune industrie" pour réinitialiser le filtre
         existing_industries = ["Aucune industrie"] + existing_industries
-        industrie_choisie = st.selectbox("Sélectionner une industrie", existing_industries)
+        industrie_choisie = st.multiselect("Sélectionner une industrie", existing_industries)
+        
+    # Sélection de la région
+    if secteur_choisi:
+        existing_regions = get_region()
+        region_choisie = st.multiselect("Sélectionner une ou plusieurs région(s)", existing_regions)
+    
+    # Mise à jour dynamique des départements en fonction de la région
+    departement_choisie = None
+    if secteur_choisi:
+        departements = get_departement(region_choisie)
+        departement_choisie = st.multiselect("Sélectionner le/les département(s) souhaité(s)", departements)
+    
+    # Sélection multiple de la taille de l'entreprise
+    size_choisies = []
+    if secteur_choisi:
+        sizes = get_size()
+        size_choisies = st.multiselect("Sélectionner une ou plusieurs tailles d'entreprise", sizes)
+
 
 # Main content area
 # Création des onglets
