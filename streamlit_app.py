@@ -143,63 +143,67 @@ with st.sidebar:
 #tab1, tab2 = st.tabs(["Carte & Données", "Analyses & Graphiques"])
 #with tab1: 
 if secteur_choisi:
-        entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie, secteur_choisi)
-    
+    entreprises, map_data = get_entreprises(region_choisie, departement_choisie, size_choisies, industrie_choisie, secteur_choisi)
+
     if not entreprises.empty:
-            st.write(f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', tailles {size_choisies}, secteur d'activité '{secteur_choisi}' :")
-            
-            # Afficher le tableau avec les nouvelles colonnes, et permettre l'édition de la colonne COMMENTAIRES
-            edited_df = st.data_editor(
-                entreprises[["NOM", "CREATION", "VILLE", "SIZE", "SITE_INTERNET", "LINKEDIN_URL", "COMMENTAIRES"]],
-                use_container_width=True,  # Étire sur toute la largeur
-                height=600,  # Ajuste la hauteur du tableau
-                column_config={
-                    "COMMENTAIRES": st.column_config.TextColumn("Commentaires")  # Rendre la colonne des commentaires éditable
-                }
-            )
-    
-            # Sauvegarde des commentaires modifiés
-        if not entreprises["COMMENTAIRES"].equals(edited_df["COMMENTAIRES"]):  # Si seulement les commentaires ont été modifiés
-                for index, row in edited_df.iterrows():
-                    if row["COMMENTAIRES"] != entreprises.at[index, "COMMENTAIRES"]:
-                        save_commentaire(row["NOM"], row["COMMENTAIRES"])
-                st.success("Les commentaires ont été mis à jour.")
-    
-            # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
-            csv_data = to_csv(entreprises)
-            st.download_button(
-                label="Télécharger en CSV",
-                data=csv_data,
-                file_name="entreprises.csv",
-                mime="text/csv"
-            )
-    
-            # Vérifier si la carte peut être affichée
+        st.write(
+            f"Tableau des entreprises dans la région '{region_choisie}', département '{departement_choisie}', "
+            f"tailles {size_choisies}, secteur d'activité '{secteur_choisi}' :"
+        )
+
+        # Afficher le tableau avec les nouvelles colonnes, et permettre l'édition de la colonne COMMENTAIRES
+        edited_df = st.data_editor(
+            entreprises[["NOM", "CREATION", "VILLE", "SIZE", "SITE_INTERNET", "LINKEDIN_URL", "COMMENTAIRES"]],
+            use_container_width=True,
+            height=600,
+            column_config={
+                "COMMENTAIRES": st.column_config.TextColumn("Commentaires")
+            }
+        )
+
+        # Sauvegarde des commentaires modifiés
+        if not entreprises["COMMENTAIRES"].equals(edited_df["COMMENTAIRES"]):
+            for index, row in edited_df.iterrows():
+                if row["COMMENTAIRES"] != entreprises.at[index, "COMMENTAIRES"]:
+                    save_commentaire(row["NOM"], row["COMMENTAIRES"])
+            st.success("Les commentaires ont été mis à jour.")
+
+        # Ajouter le bouton de téléchargement CSV avec toutes les colonnes
+        csv_data = to_csv(entreprises)
+        st.download_button(
+            label="Télécharger en CSV",
+            data=csv_data,
+            file_name="entreprises.csv",
+            mime="text/csv"
+        )
+
+        # Vérifier si la carte peut être affichée
         if not map_data.empty:
-                st.subheader("Localisation des Entreprises")
-                layer = pdk.Layer(
-                    "ScatterplotLayer",
-                    data=map_data,
-                    get_position=["LON", "LAT"],
-                    get_color=[255, 0, 0, 140],  # Rouge semi-transparent
-                    get_radius=500,
-                    pickable=True,
-                )
-    
-                view_state = pdk.ViewState(
-                    latitude=map_data["LAT"].mean(),
-                    longitude=map_data["LON"].mean(),
-                    zoom=10
-                )
-    
-                deck = pdk.Deck(
-                    layers=[layer],
-                    initial_view_state=view_state,
-                    map_style="mapbox://styles/mapbox/light-v9",  # Fond de carte clair
-                    tooltip={"html": "<b>Ville:</b> {VILLE}<br><b>Entreprises:</b> {ENTREPRISES}"}
-                )
-    
-                st.pydeck_chart(deck)
+            st.subheader("Localisation des Entreprises")
+            layer = pdk.Layer(
+                "ScatterplotLayer",
+                data=map_data,
+                get_position=["LON", "LAT"],
+                get_color=[255, 0, 0, 140],
+                get_radius=500,
+                pickable=True,
+            )
+
+            view_state = pdk.ViewState(
+                latitude=map_data["LAT"].mean(),
+                longitude=map_data["LON"].mean(),
+                zoom=10
+            )
+
+            deck = pdk.Deck(
+                layers=[layer],
+                initial_view_state=view_state,
+                map_style="mapbox://styles/mapbox/light-v9",
+                tooltip={"html": "<b>Ville:</b> {VILLE}<br><b>Entreprises:</b> {ENTREPRISES}"}
+            )
+
+            st.pydeck_chart(deck)
+
 
             
 #with tab2:
