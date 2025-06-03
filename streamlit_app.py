@@ -102,19 +102,17 @@ def get_entreprises(
     # Données complètes pour le tableau
     result_full = result.drop(columns=["LON", "LAT"])
 
-    # Filtrer uniquement les entreprises avec des coordonnées pour la carte
-    # Données pour la carte uniquement
+        # Filtrer uniquement les entreprises avec des coordonnées pour la carte
     map_data = result.dropna(subset=["LAT", "LON"])
     
-    # Grouper les entreprises pour la carte
-    # Series avec index multi-colonnes
-    grouped_series = map_data.groupby(["VILLE", "LAT", "LON"]).apply(
-        lambda x: ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
+    # Grouper les données pour la carte, sans conflit de colonnes
+    grouped_data = (
+        map_data.groupby(["VILLE", "LAT", "LON"], as_index=False)
+        .agg({
+            "NOM": lambda noms: ", ".join(f"{nom} ({size} employés)" for nom, size in zip(map_data.loc[noms.index, "NOM"], map_data.loc[noms.index, "SIZE"]))
+        })
+        .rename(columns={"NOM": "ENTREPRISES"})
     )
-    
-    # Transformer en DataFrame propre
-    grouped_data = grouped_series.reset_index()
-    grouped_data.columns = ["VILLE", "LAT", "LON", "ENTREPRISES"]
 
 
 
