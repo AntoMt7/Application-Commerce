@@ -107,11 +107,14 @@ def get_entreprises(
     map_data = result.dropna(subset=["LAT", "LON"])
     
     # Grouper les entreprises pour la carte
-    grouped_data = (
-        map_data.groupby(["VILLE", "LAT", "LON"])
-        .apply(lambda x: ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows()))
-        .reset_index(name="ENTREPRISES")
+    # Series avec index multi-colonnes
+    grouped_series = map_data.groupby(["VILLE", "LAT", "LON"]).apply(
+        lambda x: ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
     )
+    
+    # Transformer en DataFrame propre
+    grouped_data = grouped_series.reset_index()
+    grouped_data.columns = ["VILLE", "LAT", "LON", "ENTREPRISES"]
 
 
 
