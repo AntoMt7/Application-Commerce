@@ -111,8 +111,9 @@ def get_entreprises(
         .apply(lambda x: pd.Series({
             "ENTREPRISES": ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
         }))
-        .reset_index()
+        .reset_index(drop=False)
     )
+
 
     # Retourner les données : tableau complet, et données groupées pour carte
     return result_full, grouped_data
