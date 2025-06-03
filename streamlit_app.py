@@ -99,21 +99,23 @@ def get_entreprises(
     # Exécuter la requête
     result = session.sql(query, params).to_pandas()
 
-    # Supprimer les entreprises sans coordonnées
-    result = result.dropna(subset=["LAT", "LON"])
+    # Données complètes pour le tableau
+    result_full = result.drop(columns=["LON", "LAT"])
 
-    # Grouper les entreprises par ville
-    # Grouper les entreprises par ville et concaténer les noms + tailles
+    # Filtrer uniquement les entreprises avec des coordonnées pour la carte
+    map_data = result.dropna(subset=["LAT", "LON"])
+
+    # Grouper les entreprises par ville pour affichage sur la carte
     grouped_data = (
-    result.groupby(["VILLE", "LAT", "LON"], group_keys=False).apply(lambda x: pd.Series({
-        "ENTREPRISES": ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
-    }))
-    .reset_index())
+        map_data.groupby(["VILLE", "LAT", "LON"], group_keys=False)
+        .apply(lambda x: pd.Series({
+            "ENTREPRISES": ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
+        }))
+        .reset_index()
+    )
 
-
-
-    # Retourner les données
-    return result.drop(columns=["LON", "LAT"]), grouped_data
+    # Retourner les données : tableau complet, et données groupées pour carte
+    return result_full, grouped_data
 
 # Fonction pour récupérer les années disponibles
 def get_years(session):
