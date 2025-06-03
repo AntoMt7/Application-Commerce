@@ -103,16 +103,16 @@ def get_entreprises(
     result_full = result.drop(columns=["LON", "LAT"])
 
     # Filtrer uniquement les entreprises avec des coordonnées pour la carte
+    # Données pour la carte uniquement
     map_data = result.dropna(subset=["LAT", "LON"])
-
-    # Grouper les entreprises par ville pour affichage sur la carte
+    
+    # Grouper les entreprises pour la carte
     grouped_data = (
-        map_data.groupby(["VILLE", "LAT", "LON"], group_keys=False)
-        .apply(lambda x: pd.Series({
-            "ENTREPRISES": ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows())
-        }))
-        .reset_index(drop=False)
+        map_data.groupby(["VILLE", "LAT", "LON"])
+        .apply(lambda x: ", ".join(f"{row['NOM']} ({row['SIZE']} employés)" for _, row in x.iterrows()))
+        .reset_index(name="ENTREPRISES")
     )
+
 
 
     # Retourner les données : tableau complet, et données groupées pour carte
