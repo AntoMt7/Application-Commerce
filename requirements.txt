@@ -2,3 +2,4 @@ pandas
 snowflake-connector-python
 snowflake-snowpark-python
 plotly
+cryptography>=46.0.5 # not directly required, pinned by Snyk to avoid a vulnerability
